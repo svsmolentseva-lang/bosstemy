@@ -30,6 +30,7 @@ else
 fi
 
 git config user.name  >/dev/null 2>&1 || git config user.name  "Boss Temy"
+git config credential.helper osxkeychain 2>/dev/null
 git config user.email >/dev/null 2>&1 || git config user.email "boss-temy@example.com"
 
 step "2/4  Куда выкладываем"
@@ -56,14 +57,27 @@ else
 fi
 
 step "4/4  Отправляю на GitHub"
-say "      если спросит логин и пароль - логин это имя на GitHub,"
-say "      а вместо пароля нужен токен доступа"
+say "      сейчас git спросит логин и пароль:"
+say "      Username - ваше имя на GitHub (svsmolentseva-lang),"
+say "      Password - токен доступа, а не пароль от сайта."
+say "      Токен при вставке не виден, это нормально: Cmd+V и Enter."
+say ""
 if git push -u origin main; then
-  say ""
-  say "  Код на GitHub: ${REMOTE%.git}"
+  :
 else
-  oops "Отправить не вышло. Чаще всего дело в токене или в том, что репозиторий не пустой."
-  say  "  Если репозиторий создавался с README, выполните: git pull --rebase origin main"
+  oops "Отправить не вышло."
+  say  "  Если ошибка про логин или токен - создайте новый токен и запустите файл ещё раз."
+  say  "  Если пишет, что репозиторий не пустой - выполните: git pull --rebase origin main"
+  bye 1
+fi
+
+say ""
+say "      Проверяю, что код действительно лежит на GitHub..."
+if git ls-remote --heads origin main | grep -q main; then
+  say ""
+  say "  Готово. Код на GitHub: ${REMOTE%.git}"
+else
+  oops "На GitHub ветки main не видно. Откройте репозиторий в браузере и проверьте."
   bye 1
 fi
 bye 0
