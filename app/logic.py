@@ -408,7 +408,9 @@ def next_question(raid_id: int, user_id: int) -> dict | None:
     if not row:
         return None
     item = dict(row)
-    item["options"] = item["options"].split("|")
+    # порядок вариантов каждый раз свой: иначе верный ответ запоминается по месту
+    item["options"] = [o for o in item["options"].split("|") if o]
+    random.shuffle(item["options"])
     return item
 
 

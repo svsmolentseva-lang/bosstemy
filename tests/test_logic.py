@@ -152,3 +152,36 @@ def test_join_code_is_unique_and_readable(world):
     for code in codes:
         assert "-" in code
         assert not set(code) & set("O0I1")
+
+
+def test_library_questions_have_four_options(world):
+    """В каждом вопросе ровно четыре варианта и ровно один верный."""
+    from app import seed
+    for topic, text, answer, options in seed.LIBRARY:
+        assert len(options) == 4, f"{text}: вариантов {len(options)}, а нужно 4"
+        assert len(set(options)) == 4, f"{text}: варианты повторяются"
+        assert options.count(answer) == 1, f"{text}: верный ответ не один"
+
+
+def test_library_options_are_not_equal_by_value(world):
+    """Дроби вроде 6/8 и 3/4 равны по значению - таких пар быть не должно."""
+    import re
+    from fractions import Fraction
+    from app import seed
+
+    def value(text):
+        text = text.strip().replace(",", ".")
+        m = re.fullmatch(r"(\d+)\s*/\s*(\d+)", text)
+        if m:
+            return Fraction(int(m.group(1)), int(m.group(2)))
+        try:
+            return Fraction(text)
+        except Exception:
+            return None
+
+    for topic, text, answer, options in seed.LIBRARY:
+        right = value(answer)
+        if right is None:
+            continue
+        twins = [o for o in options if o != answer and value(o) == right]
+        assert not twins, f"{text}: {twins} равны верному ответу"
