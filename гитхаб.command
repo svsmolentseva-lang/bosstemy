@@ -65,9 +65,14 @@ say ""
 if git push -u origin main; then
   :
 else
+  printf 'protocol=https\nhost=github.com\n\n' | git credential-osxkeychain erase 2>/dev/null
   oops "Отправить не вышло."
-  say  "  Если ошибка про логин или токен - создайте новый токен и запустите файл ещё раз."
+  say  "  Write access to repository not granted - у токена нет права записи."
+  say  "    Проще всего сделать классический токен: github.com - Settings -"
+  say  "    Developer settings - Personal access tokens - Tokens (classic) -"
+  say  "    Generate new token (classic), галочка repo, Generate token."
   say  "  Если пишет, что репозиторий не пустой - выполните: git pull --rebase origin main"
+  say  "  Старый токен я из связки ключей убрал, при следующем запуске спросит заново."
   bye 1
 fi
 
