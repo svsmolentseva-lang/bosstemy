@@ -86,6 +86,25 @@ def library_topics() -> list[str]:
         "SELECT DISTINCT topic FROM questions WHERE class_id IS NULL AND status = 'approved'"))
 
 
+def topics_by_subject(class_id: int) -> dict[str, list[str]]:
+    """Темы, разложенные по предметам: своя подсказка для каждого предмета.
+
+    Иначе в математике всплывают темы обществознания. Берём библиотеку,
+    банк класса и прошлые рейды - у всех трёх есть предмет.
+    """
+    box: dict[str, set[str]] = {}
+    rows = db.q(
+        "SELECT DISTINCT subject, topic FROM questions"
+        " WHERE status = 'approved' AND (class_id IS NULL OR class_id = ?)", class_id)
+    rows += db.q("SELECT DISTINCT subject, topic FROM raids WHERE class_id = ?", class_id)
+    for r in rows:
+        topic = (r["topic"] or "").strip()
+        if not topic:
+            continue
+        box.setdefault(norm_subject(r["subject"]), set()).add(topic)
+    return {s: sorted(t) for s, t in sorted(box.items())}
+
+
 def class_topics(class_id: int) -> list[str]:
     """Темы, по которым у класса есть свои вопросы или прошлые рейды."""
     seen = {r["topic"] for r in db.q(
@@ -229,7 +248,7 @@ def library_size(class_id: int, topic: str) -> int:
     return row["n"]
 
 
-def copy_from_library(class_id: int, topic: str) -> int:
+def copy_from_library(class_id: int, topic: str, subject: str | None = None) -> int:
     """Копирует библиотечные вопросы в банк класса. Возвращает, сколько добавилось."""
     rows = db.q(
         "SELECT * FROM questions WHERE topic = ? AND status = 'approved' AND class_id IS NULL",
@@ -243,9 +262,10 @@ def copy_from_library(class_id: int, topic: str) -> int:
         if exists:
             continue
         db.run(
-            "INSERT INTO questions (class_id, topic, text, answer, options, status)"
-            " VALUES (?, ?, ?, ?, ?, 'approved')",
+            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject)"
+            " VALUES (?, ?, ?, ?, ?, 'approved', ?)",
             class_id, r["topic"], r["text"], r["answer"], r["options"],
+            norm_subject(subject or r["subject"]),
         )
         added += 1
     return added

@@ -247,6 +247,8 @@ printf '%s' "$BASE/join?code=$CODE" | pbcopy 2>/dev/null && say "  Ссылка 
 say ""
 say "  Перезапустить:      ssh $TARGET 'systemctl restart boss-temy'"
 say "  Посмотреть логи:    ssh $TARGET 'journalctl -u boss-temy -n 50'"
-say "  Обновить код:       запустите этот скрипт заново"
+say "  Обновить код:       запустите этот скрипт заново,"
+say "                      либо один раз автообновление.command - и дальше"
+say "                      сервер будет сам забирать код с GitHub"
 say ""
 bye 0

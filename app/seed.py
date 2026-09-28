@@ -1,6 +1,11 @@
 """Стартовый банк вопросов - чтобы первый учитель не смотрел на пустой экран."""
 from . import db
 
+SUBJECT_OF_TOPIC = {
+    "Дроби": "Математика",
+    "Спрос и предложение": "Обществознание",
+}
+
 LIBRARY = [
     ("Дроби", "Сократи дробь 18/24", "3/4", ["6/8", "3/4", "9/12"]),
     ("Дроби", "Какая дробь больше: 2/5 или 2/7?", "2/5", ["2/7", "2/5", "Равны"]),
@@ -39,14 +44,21 @@ LIBRARY = [
 
 
 def load() -> int:
+    """Заливает библиотеку и проставляет предмет там, где его ещё нет."""
     added = 0
     for topic, text, answer, options in LIBRARY:
+        subject = SUBJECT_OF_TOPIC.get(topic)
         if db.q1("SELECT 1 FROM questions WHERE class_id IS NULL AND text = ?", text):
             continue
         db.run(
-            "INSERT INTO questions (class_id, topic, text, answer, options, status)"
-            " VALUES (NULL, ?, ?, ?, ?, 'approved')",
-            topic, text, answer, "|".join(options),
+            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject)"
+            " VALUES (NULL, ?, ?, ?, ?, 'approved', ?)",
+            topic, text, answer, "|".join(options), subject,
         )
         added += 1
+
+    # старые вопросы заводились без предмета - дописываем по теме
+    for topic, subject in SUBJECT_OF_TOPIC.items():
+        db.run("UPDATE questions SET subject = ? WHERE topic = ?"
+               " AND (subject IS NULL OR subject = '')", subject, topic)
     return added

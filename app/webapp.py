@@ -350,7 +350,7 @@ class Handler(BaseHTTPRequestHandler):
             "raid": None,
             "pending": logic.pending_questions(class_id),
             "roster": logic.class_roster(class_id),
-            "topics": sorted(set(logic.class_topics(class_id)) | set(logic.library_topics())),
+            "topics": logic.topics_by_subject(class_id),
             "bosses": [{"key": k, "name": n} for k, n in logic.BOSSES.items()],
         }
         if raid is not None:
@@ -416,7 +416,7 @@ class Handler(BaseHTTPRequestHandler):
 
         # мало своих вопросов - подтягиваем из общей библиотеки
         if logic.bank_size(class_id, topic) < config.MIN_BANK_FOR_RAID:
-            logic.copy_from_library(class_id, topic)
+            logic.copy_from_library(class_id, topic, subject)
         bank = logic.bank_size(class_id, topic)
         if bank < config.MIN_BANK_FOR_RAID:
             return self.fail(400, f"в теме «{topic}» всего {bank} вопросов,"

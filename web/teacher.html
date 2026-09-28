@@ -313,13 +313,24 @@
     }).catch(function(){ fail('Нет связи с сервером.'); });
   }
 
+  var TOPICS = {};
+
+  // Темы своего предмета: в математике не должны всплывать темы обществознания.
+  function fillTopics(clear){
+    var list = TOPICS[$('nsubject').value] || [];
+    $('topics').innerHTML = list.map(function(t){
+      return '<option value="' + t + '">'; }).join('');
+    $('ntopic').placeholder = list.length ? list[0] : 'своя тема';
+    if (clear) $('ntopic').value = '';
+  }
+
   function fillRaidForm(d){
     var subj = $('nsubject');
     var list = (d.class.subjects && d.class.subjects.length) ? d.class.subjects : ['Общий'];
     subj.innerHTML = list.map(function(s){
       return '<option value="' + s + '">' + s + '</option>'; }).join('');
-    $('topics').innerHTML = (d.topics || []).map(function(t){
-      return '<option value="' + t + '">'; }).join('');
+    TOPICS = d.topics || {};
+    fillTopics(false);
     $('nboss').innerHTML = (d.bosses || [{key:'bobr', name:'Курвабобр'}]).map(function(b){
       return '<option value="' + b.key + '">' + b.name + '</option>'; }).join('');
   }
@@ -428,6 +439,7 @@
 
   $('nraid').addEventListener('click', createRaid);
   $('ntopic').addEventListener('keydown', function(e){ if (e.key === 'Enter') createRaid(); });
+  $('nsubject').addEventListener('change', function(){ fillTopics(true); });
 
   $('refresh').addEventListener('click', function(){ location.reload(); });
   $('extend').addEventListener('click', function(){

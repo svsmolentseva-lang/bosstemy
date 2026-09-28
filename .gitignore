@@ -17,3 +17,4 @@ _backup/
 *.bak2
 .fuse_hidden*
 _to_delete/
+.server-host
