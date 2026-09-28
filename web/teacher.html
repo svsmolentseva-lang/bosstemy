@@ -50,6 +50,10 @@
   .weak .item:last-child{margin-bottom:0}
   .weak .top{display:flex; justify-content:space-between; gap:12px; font-size:13.5px; margin-bottom:5px}
   .weak .top span{font:700 13px/1 ui-monospace,Menlo,monospace; color:var(--miss)}
+  .weak .sub{font-size:12px; color:var(--muted); margin-top:4px}
+  .qzone{border-top:1px solid var(--line); margin-top:16px; padding-top:14px}
+  .qzone h3{font:600 13px/1.2 inherit; color:var(--muted); margin:0 0 12px;
+    text-transform:uppercase; letter-spacing:.04em}
   .wtrack{height:7px; border-radius:99px; background:var(--line); overflow:hidden}
   .wfill{height:100%; border-radius:99px; background:var(--miss)}
 
@@ -76,6 +80,14 @@
   .names span{font-size:12.5px; padding:5px 10px; border-radius:999px;
     background:var(--bg); border:1px solid var(--line)}
   .empty{color:var(--muted); font-size:13.5px}
+  .pupils{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+  .pupil{display:inline-flex; align-items:center; gap:6px; font-size:12.5px;
+    padding:5px 8px 5px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--line)}
+  .pupil b{font-weight:600}
+  .pupil .drop{background:none; border:0; padding:0 2px; font:15px/1 inherit; cursor:pointer;
+    color:var(--muted)}
+  .pupil .drop:hover{color:#B3261E}
+  .pupil.played{color:var(--muted)}
   .foot{margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
   .foot button{background:none; border:0; color:var(--muted); font:13px/1 inherit;
     cursor:pointer; padding:10px 12px; text-decoration:underline; text-underline-offset:3px}
@@ -149,7 +161,11 @@
 
   <div class="card weak" id="weakcard">
     <h2>Где класс спотыкается</h2>
-    <div id="weak"></div>
+    <div id="skills"></div>
+    <div class="qzone" id="qzone">
+      <h3>Самые провальные вопросы</h3>
+      <div id="weak"></div>
+    </div>
   </div>
 
   <div class="card" id="modcard">
@@ -160,6 +176,12 @@
   <div class="card">
     <h2>Кого ещё нет</h2>
     <div id="absent"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ученики класса</h2>
+    <div id="pupils"></div>
+    <p class="msg" id="pmsg"></p>
   </div>
 
   <div class="card">
@@ -325,6 +347,70 @@
     if (clear) $('ntopic').value = '';
   }
 
+  function drawBars(box, rows, emptyText){
+    box.innerHTML = '';
+    if (!rows.length){
+      box.innerHTML = '<div class="empty">' + emptyText + '</div>';
+      return;
+    }
+    rows.forEach(function(row){
+      var item = document.createElement('div'); item.className = 'item';
+      var top = document.createElement('div'); top.className = 'top';
+      var t = document.createElement('span'); t.style.cssText = 'font:inherit;color:inherit';
+      t.textContent = row.title;
+      var n = document.createElement('span'); n.textContent = row.share + '%';
+      top.appendChild(t); top.appendChild(n);
+      var tr = document.createElement('div'); tr.className = 'wtrack';
+      var f = document.createElement('div'); f.className = 'wfill';
+      f.style.width = row.share + '%';
+      tr.appendChild(f);
+      item.appendChild(top); item.appendChild(tr);
+      if (row.sub){
+        var sub = document.createElement('div'); sub.className = 'sub';
+        sub.textContent = row.sub; item.appendChild(sub);
+      }
+      box.appendChild(item);
+    });
+  }
+
+  function drawPupils(list){
+    var box = $('pupils');
+    box.innerHTML = '';
+    if (!list || !list.length){
+      box.innerHTML = '<div class="empty">Пока никто не зашёл по ссылке.</div>';
+      return;
+    }
+    var wrap = document.createElement('div'); wrap.className = 'pupils';
+    list.forEach(function(p){
+      var el = document.createElement('span');
+      el.className = 'pupil' + (p.answers ? ' played' : '');
+      var b = document.createElement('b'); b.textContent = p.name; el.appendChild(b);
+      if (!p.answers){
+        // убрать можно только того, кто ещё ни разу не отвечал
+        var x = document.createElement('button');
+        x.type = 'button'; x.className = 'drop'; x.textContent = '×';
+        x.title = 'убрать логин';
+        x.addEventListener('click', function(){ dropPupil(p.id, p.name); });
+        el.appendChild(x);
+      }
+      wrap.appendChild(el);
+    });
+    box.appendChild(wrap);
+  }
+
+  function dropPupil(id, name){
+    var msg = $('pmsg');
+    msg.textContent = 'Убираем ' + name + '…'; msg.className = 'msg';
+    fetch(api('/api/student/remove'), {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({id: id})
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if (res.error){ msg.textContent = res.error; msg.className = 'msg bad'; return; }
+      msg.textContent = 'Логин ' + name + ' убран.'; msg.className = 'msg ok';
+      drawPupils(res.roster);
+    }).catch(function(){ msg.textContent = 'Нет связи с сервером.'; msg.className = 'msg bad'; });
+  }
+
   function fillRaidForm(d){
     var subj = $('nsubject');
     var list = (d.class.subjects && d.class.subjects.length) ? d.class.subjects : ['Общий'];
@@ -384,27 +470,18 @@
       $('part').textContent = r.participants + ' из ' + r.total;
       $('bank').textContent = r.bank;
 
-      var weak = $('weak');
-      weak.innerHTML = '';
-      if (r.weak && r.weak.length){
-        var max = r.weak[0].fails || 1;
-        r.weak.forEach(function(w){
-          var item = document.createElement('div'); item.className = 'item';
-          var top = document.createElement('div'); top.className = 'top';
-          var t = document.createElement('span'); t.style.cssText = 'font:inherit;color:inherit';
-          t.textContent = w.text;
-          var n = document.createElement('span'); n.textContent = w.fails;
-          top.appendChild(t); top.appendChild(n);
-          var tr = document.createElement('div'); tr.className = 'wtrack';
-          var f = document.createElement('div'); f.className = 'wfill';
-          f.style.width = (w.fails / max * 100) + '%';
-          tr.appendChild(f);
-          item.appendChild(top); item.appendChild(tr);
-          weak.appendChild(item);
-        });
-      } else {
-        weak.innerHTML = '<div class="empty">Пока никто не ошибался - или ещё не отвечали.</div>';
-      }
+      // Подтемы: по ним понятно, что переобъяснить. Вопросов в банке могут
+      // быть сотни, и списком их показывать бессмысленно.
+      drawBars($('skills'), (r.skills || []).map(function(k){
+        return { title: k.skill, share: k.share,
+                 sub: 'ошиблись в ' + k.fails + ' ответах из ' + k.asked
+                      + (k.sample ? ' · например: ' + k.sample : '') };
+      }), 'Пока мало ответов, чтобы говорить о слабых местах.');
+
+      drawBars($('weak'), (r.weak || []).map(function(w){
+        return { title: w.text, share: w.share,
+                 sub: 'ошиблись ' + w.fails + ' из ' + w.asked };
+      }), 'Ни одного вопроса, на котором спотыкался бы класс.');
 
       var abs = $('absent');
       abs.innerHTML = '';
@@ -428,6 +505,7 @@
     }
 
     drawPending(d.pending || []);
+    drawPupils(d.roster || []);
 
     var link = location.origin + '/join?code=' + d.class.code;
     $('joinlink').textContent = link;

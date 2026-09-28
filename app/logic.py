@@ -163,6 +163,11 @@ def join_by_link(code: str, name: str) -> dict | None:
     if not cls:
         return None
     name = " ".join(name.split())[:30] or "Ученик"
+    # два «svetilnick» в одном классе - это всегда путаница: и в списках,
+    # и в «кого ещё нет». Второй раз логин не отдаём.
+    if db.q1("SELECT 1 FROM users WHERE class_id = ? AND role = 'student'"
+             " AND lower(name) = lower(?)", cls["id"], name):
+        return {"taken": True, "name": name}
     token = secrets.token_urlsafe(9)
     uid = db.run(
         "INSERT INTO users (ext_id, token, name, role, class_id) VALUES (?, ?, ?, 'student', ?)",
@@ -208,8 +213,22 @@ def user_by_token(token: str) -> dict | None:
 def class_roster(class_id: int) -> list[dict]:
     """Список учеников с их личными ссылками - учителю для раздачи."""
     return [dict(r) for r in db.q(
-        "SELECT name, token FROM users WHERE class_id = ? AND role = 'student'"
-        " AND token IS NOT NULL ORDER BY name", class_id)]
+        "SELECT u.id, u.name, u.token,"
+        "       (SELECT COUNT(*) FROM answers a WHERE a.user_id = u.id) AS answers"
+        "  FROM users u WHERE u.class_id = ? AND u.role = 'student'"
+        "   AND u.token IS NOT NULL ORDER BY u.name", class_id)]
+
+
+def remove_student(class_id: int, user_id: int) -> bool:
+    """Убирает лишнюю запись - только из своего класса и только если не играл."""
+    row = db.q1("SELECT * FROM users WHERE id = ? AND class_id = ? AND role = 'student'",
+                user_id, class_id)
+    if not row:
+        return False
+    if db.q1("SELECT 1 FROM answers WHERE user_id = ?", user_id):
+        return False
+    db.run("DELETE FROM users WHERE id = ?", user_id)
+    return True
 
 
 def join_class(code: str, ext_id: str, name: str) -> dict | None:
@@ -262,10 +281,10 @@ def copy_from_library(class_id: int, topic: str, subject: str | None = None) -> 
         if exists:
             continue
         db.run(
-            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject)"
-            " VALUES (?, ?, ?, ?, ?, 'approved', ?)",
+            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject, skill)"
+            " VALUES (?, ?, ?, ?, ?, 'approved', ?, ?)",
             class_id, r["topic"], r["text"], r["answer"], r["options"],
-            norm_subject(subject or r["subject"]),
+            norm_subject(subject or r["subject"]), r["skill"],
         )
         added += 1
     return added
@@ -387,11 +406,13 @@ def clone_raid(raid_id: int, target_class_id: int, days: int) -> dict:
         if not db.q1("SELECT 1 FROM questions WHERE class_id = ? AND text = ?",
                      target_class_id, r["text"]):
             db.run(
-                "INSERT INTO questions (class_id, topic, text, answer, options, status)"
-                " VALUES (?, ?, ?, ?, ?, 'approved')",
+                "INSERT INTO questions (class_id, topic, text, answer, options, status,"
+                " subject, skill) VALUES (?, ?, ?, ?, ?, 'approved', ?, ?)",
                 target_class_id, r["topic"], r["text"], r["answer"], r["options"],
+                r["subject"], r["skill"],
             )
-    return create_raid(target_class_id, src["topic"], days, src["hp_max"])
+    return create_raid(target_class_id, src["topic"], days, src["hp_max"],
+                       subject=src["subject"], boss=src["boss"])
 
 
 def next_question(raid_id: int, user_id: int) -> dict | None:
@@ -485,12 +506,38 @@ def raid_report(raid_id: int) -> dict:
         "SELECT DISTINCT user_id FROM answers WHERE raid_id = ?", raid_id
     )}
 
-    weak = db.q(
-        "SELECT q.id, q.text, COUNT(*) fails FROM answers a"
-        " JOIN questions q ON q.id = a.question_id"
-        " WHERE a.raid_id = ? AND a.is_correct = 0"
-        " GROUP BY q.id ORDER BY fails DESC LIMIT 5",
+    # По подтемам, а не по вопросам: в банке их могут быть сотни, и учителю
+    # нужно знать, что переобъяснить, а не номер вопроса.
+    skills = db.q(
+        "SELECT COALESCE(NULLIF(q.skill, \'\'), \'Без подтемы\') AS skill,"
+        "       COUNT(*) AS asked, SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) AS fails"
+        "  FROM answers a JOIN questions q ON q.id = a.question_id"
+        " WHERE a.raid_id = ? GROUP BY skill",
         raid_id,
+    )
+    skills = [dict(r) for r in skills if r["asked"] >= config.MIN_ANSWERS_FOR_SKILL and r["fails"]]
+    for r in skills:
+        r["share"] = round(r["fails"] * 100 / r["asked"])
+        sample = db.q1(
+            "SELECT q.text, COUNT(*) fails FROM answers a JOIN questions q ON q.id = a.question_id"
+            " WHERE a.raid_id = ? AND a.is_correct = 0"
+            "   AND COALESCE(NULLIF(q.skill, \'\'), \'Без подтемы\') = ?"
+            " GROUP BY q.id ORDER BY fails DESC LIMIT 1",
+            raid_id, r["skill"],
+        )
+        r["sample"] = sample["text"] if sample else ""
+    skills.sort(key=lambda r: (-r["share"], -r["fails"]))
+
+    # Отдельные вопросы - по доле ошибок среди отвечавших, иначе наверх лезут
+    # просто чаще выпадавшие.
+    weak = db.q(
+        "SELECT q.id, q.text, COUNT(*) AS asked,"
+        "       SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) AS fails"
+        "  FROM answers a JOIN questions q ON q.id = a.question_id"
+        " WHERE a.raid_id = ? GROUP BY q.id"
+        " HAVING fails > 0 AND asked >= ?"
+        " ORDER BY (fails * 1.0 / asked) DESC, fails DESC LIMIT 5",
+        raid_id, config.MIN_ANSWERS_FOR_QUESTION,
     )
 
     return {
@@ -498,7 +545,10 @@ def raid_report(raid_id: int) -> dict:
         "total_students": len(roster),
         "participants": len([r for r in roster if r["id"] in active_ids]),
         "absentees": [r["name"] for r in roster if r["id"] not in active_ids],
-        "weak": [{"question_id": r["id"], "text": r["text"], "fails": r["fails"]} for r in weak],
+        "skills": skills[:5],
+        "weak": [{"question_id": r["id"], "text": r["text"], "fails": r["fails"],
+                  "asked": r["asked"], "share": round(r["fails"] * 100 / r["asked"])}
+                 for r in weak],
         "bank": bank_size(raid["class_id"], raid["topic"], include_library=True),
     }
 

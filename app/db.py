@@ -113,6 +113,7 @@ def conn() -> sqlite3.Connection:
             "ALTER TABLE raids ADD COLUMN subject TEXT",
             "ALTER TABLE questions ADD COLUMN subject TEXT",
             "ALTER TABLE raids ADD COLUMN boss TEXT",
+            "ALTER TABLE questions ADD COLUMN skill TEXT",
         ):
             try:
                 c.execute(stmt)

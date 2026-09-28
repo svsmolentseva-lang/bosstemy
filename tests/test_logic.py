@@ -100,7 +100,30 @@ def test_report_lists_absentees_and_weak_spots(world):
     assert rep["total_students"] == 5
     assert rep["participants"] == 2
     assert len(rep["absentees"]) == 3
-    assert rep["weak"], "должны быть проваленные вопросы"
+
+
+def test_one_mistake_does_not_become_a_verdict(world):
+    """Одна ошибка одного ребёнка не попадает ни в подтемы, ни в вопросы."""
+    answer(world, world["students"][0], correct=False)
+    rep = logic.raid_report(world["raid"]["id"])
+    assert rep["weak"] == []
+    assert rep["skills"] == []
+
+
+def test_report_groups_mistakes_by_skill(world):
+    """Когда на одном вопросе спотыкается класс, видно подтему и пример."""
+    raid_id = world["raid"]["id"]
+    q = logic.next_question(raid_id, world["students"][0]["id"])
+    for student in world["students"]:
+        logic.submit_answer(raid_id, student["id"], q["id"], "заведомо неверно", 10.0)
+
+    rep = logic.raid_report(raid_id)
+    assert rep["skills"], "подтема должна попасть в отчёт"
+    top = rep["skills"][0]
+    assert top["share"] == 100
+    assert top["asked"] == 5
+    assert top["sample"] == q["text"]
+    assert rep["weak"][0]["share"] == 100
 
 
 def test_student_question_waits_for_moderation(world):
@@ -155,12 +178,13 @@ def test_join_code_is_unique_and_readable(world):
 
 
 def test_library_questions_have_four_options(world):
-    """В каждом вопросе ровно четыре варианта и ровно один верный."""
+    """В каждом вопросе ровно четыре варианта, один верный и указана подтема."""
     from app import seed
-    for topic, text, answer, options in seed.LIBRARY:
+    for topic, skill, text, answer, options in seed.LIBRARY:
         assert len(options) == 4, f"{text}: вариантов {len(options)}, а нужно 4"
         assert len(set(options)) == 4, f"{text}: варианты повторяются"
         assert options.count(answer) == 1, f"{text}: верный ответ не один"
+        assert skill.strip(), f"{text}: не указана подтема"
 
 
 def test_library_options_are_not_equal_by_value(world):
@@ -179,7 +203,7 @@ def test_library_options_are_not_equal_by_value(world):
         except Exception:
             return None
 
-    for topic, text, answer, options in seed.LIBRARY:
+    for topic, skill, text, answer, options in seed.LIBRARY:
         right = value(answer)
         if right is None:
             continue

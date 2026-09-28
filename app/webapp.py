@@ -85,6 +85,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.api_moderate(parse_qs(url.query))
         if url.path == "/api/raid":
             return self.api_raid_create(parse_qs(url.query))
+        if url.path == "/api/student/remove":
+            return self.api_student_remove(parse_qs(url.query))
         if url.path == "/api/extend":
             return self.api_extend(parse_qs(url.query))
         if url.path == "/api/admin/class":
@@ -142,6 +144,10 @@ class Handler(BaseHTTPRequestHandler):
         res = logic.join_by_link(code, name)
         if not res:
             return self.fail(404, "такого кода нет - проверь написание")
+        if res.get("taken"):
+            return self.fail(409, f"логин «{res['name']}» в классе уже занят - придумай другой."
+                                  " А если это ты играл раньше, открой свою ссылку"
+                                  " на том устройстве")
         self.json({"token": res["token"], "name": res["name"], "class": res["class"]["title"]})
 
     # ─────────────────────── кабинет администратора ───────────────────────
@@ -366,6 +372,7 @@ class Handler(BaseHTTPRequestHandler):
                 "participants": rep["participants"],
                 "total": rep["total_students"],
                 "absentees": rep["absentees"],
+                "skills": rep["skills"],
                 "weak": rep["weak"],
                 "bank": rep["bank"],
             }
@@ -389,6 +396,24 @@ class Handler(BaseHTTPRequestHandler):
 
         logic.moderate(qid, approve)
         self.json({"ok": True, "pending": logic.pending_questions(cls["id"])})
+
+    def api_student_remove(self, query):
+        """Учитель убирает лишний логин - опечатку или второй вход того же ребёнка."""
+        try:
+            user = self.teacher_of(query)
+            _classes, cls = self.scope_of(user, query)
+        except PermissionError as e:
+            return self.fail(403, str(e))
+
+        data = self.body_json()
+        try:
+            uid = int(data.get("id"))
+        except (TypeError, ValueError):
+            return self.fail(400, "нужен номер ученика")
+
+        if not logic.remove_student(cls["id"], uid):
+            return self.fail(400, "убрать не вышло: такого ученика в классе нет или он уже отвечал на вопросы")
+        self.json({"ok": True, "roster": logic.class_roster(cls["id"])})
 
     def api_raid_create(self, query):
         """Учитель объявляет рейд: предмет, тема, срок. Босса выбирает он."""
