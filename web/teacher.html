@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Панель класса</title>
+<style>
+  :root{
+    --bg:#F1F0F7; --panel:#FFFFFF; --text:#221F38; --muted:#7A7694;
+    --line:#E4E1F0; --brand:#5B2C8D; --green:#1F9E60; --miss:#D94E2B;
+    --arena:#241C42;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:18px 16px calc(24px + env(safe-area-inset-bottom));
+    max-width:640px; margin-inline:auto;
+  }
+  h1{font-size:20px; margin:0 0 2px}
+  .who{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    color:var(--muted); font-size:13px; margin-bottom:18px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:16px; margin-bottom:12px}
+  h2{font-size:14px; margin:0 0 12px; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--muted)}
+
+  .hpbox{background:var(--arena); border-radius:18px; padding:16px; margin-bottom:12px; color:#fff}
+  .hprow{display:flex; justify-content:space-between; align-items:baseline}
+  .hprow .topic{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#CFC4F2;
+    font-weight:700}
+  .hprow .num{font:700 15px/1 ui-monospace,Menlo,monospace; color:#5FE0A6;
+    font-variant-numeric:tabular-nums}
+  .track{height:11px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; margin-top:10px}
+  .fill{height:100%; border-radius:99px; background:linear-gradient(90deg,#3FD08C,#5FE0A6);
+    transition:width .5s ease}
+  .hpcap{margin-top:10px; font-size:12.5px; color:#B9AFDE}
+  .won .num{color:#FF9E85}
+  .won .fill{background:#5B3E9B}
+
+  .stats{display:flex; gap:10px; flex-wrap:wrap}
+  .stat{flex:1 1 130px; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; padding:14px}
+  .stat b{display:block; font:700 24px/1.1 ui-monospace,Menlo,monospace;
+    font-variant-numeric:tabular-nums; margin-bottom:4px}
+  .stat span{font-size:12.5px; color:var(--muted)}
+
+  .weak .item{margin-bottom:12px}
+  .weak .item:last-child{margin-bottom:0}
+  .weak .top{display:flex; justify-content:space-between; gap:12px; font-size:13.5px; margin-bottom:5px}
+  .weak .top span{font:700 13px/1 ui-monospace,Menlo,monospace; color:var(--miss)}
+  .wtrack{height:7px; border-radius:99px; background:var(--line); overflow:hidden}
+  .wfill{height:100%; border-radius:99px; background:var(--miss)}
+
+  .q{border-top:1px solid var(--line); padding-top:13px; margin-top:13px}
+  .q:first-of-type{border-top:0; padding-top:0; margin-top:0}
+  .q .from{font-size:12px; color:var(--muted); margin-bottom:4px}
+  .q .text{font-size:14px; font-weight:600}
+  .q .ans{font-size:13px; color:var(--muted); margin-top:3px}
+  .q .ans b{color:var(--text)}
+  .acts{display:flex; gap:8px; margin-top:11px}
+  .acts button{flex:1; min-height:42px; border-radius:11px; cursor:pointer;
+    font:600 13.5px/1 inherit}
+  .ok{background:var(--brand); color:#fff; border:1.5px solid var(--brand)}
+  .back{background:transparent; color:var(--brand); border:1.5px solid var(--line)}
+  button:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+
+  .link{display:flex; gap:8px; align-items:center; margin-top:10px}
+  .link code{flex:1; background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font:12.5px/1.4 ui-monospace,Menlo,monospace; word-break:break-all}
+  .copy{border:1.5px solid var(--line); background:var(--panel); color:var(--brand);
+    border-radius:10px; padding:10px 14px; font:600 13px/1 inherit; cursor:pointer; white-space:nowrap}
+  .hint{font-size:12.5px; color:var(--muted); margin-top:10px}
+  .names{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+  .names span{font-size:12.5px; padding:5px 10px; border-radius:999px;
+    background:var(--bg); border:1px solid var(--line)}
+  .empty{color:var(--muted); font-size:13.5px}
+  .foot{margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  .foot button{background:none; border:0; color:var(--muted); font:13px/1 inherit;
+    cursor:pointer; padding:10px 12px; text-decoration:underline; text-underline-offset:3px}
+  .foot button:hover{color:var(--brand)}
+  .tabs{display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
+  .tabs .lbl{font-size:12px; color:var(--muted)}
+  .tabs button{border:1.5px solid var(--line); background:var(--panel); color:var(--muted);
+    border-radius:999px; padding:8px 13px; font:600 13px/1 inherit; cursor:pointer}
+  .tabs button.on{border-color:var(--brand); background:var(--brand); color:#fff}
+  .newraid .row{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:9px}
+  .newraid label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
+  .newraid input,.newraid select{font:inherit; font-size:14px; width:100%; padding:10px 11px;
+    border-radius:11px; border:1.5px solid var(--line); background:var(--panel); color:var(--text)}
+  .newraid input:focus,.newraid select:focus{outline:2px solid var(--brand); outline-offset:1px}
+  .newraid .go{width:100%; min-height:44px; border-radius:11px; border:0; cursor:pointer;
+    background:var(--brand); color:#fff; font:600 14px/1 inherit}
+  .newraid .msg{margin:10px 0 0; font-size:13px; min-height:18px}
+  .newraid .msg.ok{color:var(--green)} .newraid .msg.bad{color:var(--miss)}
+  .err{padding:14px; border-radius:14px; background:#FDECE7; color:var(--miss);
+    font-size:13.5px; display:none}
+  .err.on{display:block}
+</style>
+</head>
+<body>
+
+<h1>Панель класса</h1>
+<div class="who"><span id="who">загружаем…</span><span id="code"></span></div>
+
+<div class="err" id="err"></div>
+
+<div id="content" hidden>
+
+  <div class="tabs" id="classtabs" hidden></div>
+  <div class="tabs" id="raidtabs" hidden></div>
+
+  <div class="card newraid">
+    <h2>Объявить рейд</h2>
+    <div class="row">
+      <div><label for="nsubject">Предмет</label>
+        <select id="nsubject"></select></div>
+      <div><label for="nboss">Босс</label>
+        <select id="nboss"></select></div>
+      <div><label for="ndays">Сколько дней</label>
+        <select id="ndays">
+          <option value="3">3 дня</option>
+          <option value="5">5 дней</option>
+          <option value="7">неделя</option>
+        </select></div>
+    </div>
+    <label for="ntopic">Тема</label>
+    <input id="ntopic" list="topics" placeholder="Дроби" autocomplete="off">
+    <datalist id="topics"></datalist>
+    <p class="msg" id="nmsg"></p>
+    <button class="go" type="button" id="nraid">Выпустить босса</button>
+  </div>
+
+  <div class="hpbox" id="hpbox">
+    <div class="hprow">
+      <span class="topic" id="topic">-</span>
+      <span class="num"><span id="hp">0</span> / <span id="hpmax">0</span></span>
+    </div>
+    <div class="track"><div class="fill" id="fill" style="width:100%"></div></div>
+    <div class="hpcap" id="hpcap"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="part">-</b><span>участвовали</span></div>
+    <div class="stat"><b id="bank">-</b><span>вопросов в теме</span></div>
+    <div class="stat"><b id="pend">-</b><span>на проверке</span></div>
+  </div>
+
+  <div class="card weak" id="weakcard">
+    <h2>Где класс спотыкается</h2>
+    <div id="weak"></div>
+  </div>
+
+  <div class="card" id="modcard">
+    <h2>Вопросы от учеников</h2>
+    <div id="pending"></div>
+  </div>
+
+  <div class="card">
+    <h2>Кого ещё нет</h2>
+    <div id="absent"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ссылка для класса</h2>
+    <div class="link">
+      <code id="joinlink">-</code>
+      <button class="copy" type="button" id="copy">Копировать</button>
+    </div>
+    <p class="hint">Раздайте её всем. Ученик придумает логин и получит свою личную ссылку.</p>
+  </div>
+
+  <div class="foot">
+    <button type="button" id="refresh">Обновить</button>
+    <button type="button" id="extend">Продлить рейд на день</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var qs = new URLSearchParams(location.search);
+
+  var saved = null;
+  try { saved = localStorage.getItem('boss_teacher_token'); } catch (e) {}
+  if (qs.get('t')) {
+    saved = qs.get('t');
+    try { localStorage.setItem('boss_teacher_token', saved); } catch (e) {}
+  }
+
+  var curClass = qs.get('class') || '';
+  var curRaid = qs.get('raid') || '';
+
+  var MONTHS = ['января','февраля','марта','апреля','мая','июня',
+                'июля','августа','сентября','октября','ноября','декабря'];
+  function ruDate(iso){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!m) return iso || '';
+    return (+m[3]) + ' ' + MONTHS[+m[2] - 1];
+  }
+
+  function api(path){
+    var p = [];
+    if (saved) p.push('t=' + encodeURIComponent(saved));
+    if (curClass) p.push('class=' + encodeURIComponent(curClass));
+    if (curRaid) p.push('raid=' + encodeURIComponent(curRaid));
+    return path + (p.length ? '?' + p.join('&') : '');
+  }
+
+  function go(classId, raidId){
+    var p = [];
+    if (saved) p.push('t=' + encodeURIComponent(saved));
+    if (classId) p.push('class=' + classId);
+    if (raidId) p.push('raid=' + raidId);
+    location.search = '?' + p.join('&');
+  }
+
+  function drawTabs(d){
+    var ct = $('classtabs');
+    ct.innerHTML = '';
+    if (d.classes && d.classes.length > 1){
+      ct.hidden = false;
+      var l = document.createElement('span'); l.className = 'lbl'; l.textContent = 'Класс';
+      ct.appendChild(l);
+      d.classes.forEach(function(c){
+        var b = document.createElement('button'); b.type = 'button';
+        b.textContent = c.title;
+        if (c.id === d.class.id) b.className = 'on';
+        b.addEventListener('click', function(){ go(c.id, ''); });
+        ct.appendChild(b);
+      });
+    }
+    var rt = $('raidtabs');
+    rt.innerHTML = '';
+    if (d.raids && d.raids.length > 1){
+      rt.hidden = false;
+      var l2 = document.createElement('span'); l2.className = 'lbl'; l2.textContent = 'Рейд';
+      rt.appendChild(l2);
+      d.raids.forEach(function(r){
+        var b = document.createElement('button'); b.type = 'button';
+        b.textContent = (r.subject ? r.subject + ' · ' : '') + r.topic;
+        if (d.raid && r.id === d.raid.id) b.className = 'on';
+        b.addEventListener('click', function(){ go(d.class.id, r.id); });
+        rt.appendChild(b);
+      });
+    }
+  }
+
+  function fail(text){
+    $('err').textContent = text;
+    $('err').classList.add('on');
+    $('content').hidden = true;
+  }
+
+  function plural(n, one, few, many){
+    var n10 = n % 10, n100 = n % 100, f;
+    if (n10 === 1 && n100 !== 11) f = one;
+    else if (n10 >= 2 && n10 <= 4 && !(n100 >= 12 && n100 <= 14)) f = few;
+    else f = many;
+    return n + ' ' + f;
+  }
+
+  function drawPending(list){
+    var box = $('pending');
+    box.innerHTML = '';
+    $('pend').textContent = list.length;
+    if (!list.length){
+      box.innerHTML = '<div class="empty">Пока ничего не прислали.</div>';
+      return;
+    }
+    list.forEach(function(q){
+      var el = document.createElement('div');
+      el.className = 'q';
+
+      var from = document.createElement('div');
+      from.className = 'from';
+      from.textContent = q.author_name || 'ученик';
+
+      var text = document.createElement('div');
+      text.className = 'text';
+      text.textContent = q.text;
+
+      var ans = document.createElement('div');
+      ans.className = 'ans';
+      ans.innerHTML = 'Ответ: <b></b>';
+      ans.querySelector('b').textContent = q.answer;
+
+      var acts = document.createElement('div');
+      acts.className = 'acts';
+      var ok = document.createElement('button');
+      ok.className = 'ok'; ok.type = 'button'; ok.textContent = 'В банк';
+      var back = document.createElement('button');
+      back.className = 'back'; back.type = 'button'; back.textContent = 'Вернуть автору';
+      ok.addEventListener('click', function(){ moderate(q.id, true, el); });
+      back.addEventListener('click', function(){ moderate(q.id, false, el); });
+      acts.appendChild(ok); acts.appendChild(back);
+
+      el.appendChild(from); el.appendChild(text); el.appendChild(ans); el.appendChild(acts);
+      box.appendChild(el);
+    });
+  }
+
+  function moderate(id, approve, el){
+    Array.prototype.forEach.call(el.querySelectorAll('button'), function(b){ b.disabled = true; });
+    fetch(api('/api/moderate'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question_id: id, approve: approve})
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if (res.error) return fail(res.error);
+      drawPending(res.pending);
+    }).catch(function(){ fail('Нет связи с сервером.'); });
+  }
+
+  function fillRaidForm(d){
+    var subj = $('nsubject');
+    var list = (d.class.subjects && d.class.subjects.length) ? d.class.subjects : ['Общий'];
+    subj.innerHTML = list.map(function(s){
+      return '<option value="' + s + '">' + s + '</option>'; }).join('');
+    $('topics').innerHTML = (d.topics || []).map(function(t){
+      return '<option value="' + t + '">'; }).join('');
+    $('nboss').innerHTML = (d.bosses || [{key:'bobr', name:'Курвабобр'}]).map(function(b){
+      return '<option value="' + b.key + '">' + b.name + '</option>'; }).join('');
+  }
+
+  function createRaid(){
+    var topic = $('ntopic').value.trim();
+    var msg = $('nmsg');
+    if (!topic){ msg.textContent = 'Впишите тему'; msg.className = 'msg bad'; return; }
+    $('nraid').disabled = true;
+    msg.textContent = 'Выпускаем…'; msg.className = 'msg';
+    fetch(api('/api/raid'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({subject: $('nsubject').value, topic: topic,
+                            boss: $('nboss').value,
+                            days: parseInt($('ndays').value, 10)})
+    }).then(function(r){ return r.json(); }).then(function(res){
+      $('nraid').disabled = false;
+      if (res.error){ msg.textContent = res.error; msg.className = 'msg bad'; return; }
+      msg.textContent = 'Босс вышел. Вопросов в теме: ' + res.bank;
+      msg.className = 'msg ok';
+      setTimeout(function(){ location.search = '?t=' + encodeURIComponent(saved)
+        + '&class=' + d_class_id + '&raid=' + res.raid.id; }, 900);
+    }).catch(function(){
+      $('nraid').disabled = false;
+      msg.textContent = 'Нет связи с сервером.'; msg.className = 'msg bad';
+    });
+  }
+
+  var d_class_id = '';
+
+  function paint(d){
+    d_class_id = d.class.id;
+    fillRaidForm(d);
+    $('content').hidden = false;
+    $('who').textContent = d.class.title + ' · ' + d.teacher;
+    $('code').textContent = 'код ' + d.class.code;
+    drawTabs(d);
+
+    if (d.raid){
+      var r = d.raid;
+      $('topic').textContent = (r.subject ? r.subject + ' · ' : '') + r.topic;
+      $('hp').textContent = r.hp_left;
+      $('hpmax').textContent = r.hp_max;
+      $('fill').style.width = (r.hp_max ? r.hp_left / r.hp_max * 100 : 0) + '%';
+      $('hpbox').classList.toggle('won', r.status === 'won');
+      $('hpcap').textContent = r.status === 'won'
+        ? 'Босс повержен - класс справился.'
+        : 'до ' + ruDate(r.deadline);
+      $('part').textContent = r.participants + ' из ' + r.total;
+      $('bank').textContent = r.bank;
+
+      var weak = $('weak');
+      weak.innerHTML = '';
+      if (r.weak && r.weak.length){
+        var max = r.weak[0].fails || 1;
+        r.weak.forEach(function(w){
+          var item = document.createElement('div'); item.className = 'item';
+          var top = document.createElement('div'); top.className = 'top';
+          var t = document.createElement('span'); t.style.cssText = 'font:inherit;color:inherit';
+          t.textContent = w.text;
+          var n = document.createElement('span'); n.textContent = w.fails;
+          top.appendChild(t); top.appendChild(n);
+          var tr = document.createElement('div'); tr.className = 'wtrack';
+          var f = document.createElement('div'); f.className = 'wfill';
+          f.style.width = (w.fails / max * 100) + '%';
+          tr.appendChild(f);
+          item.appendChild(top); item.appendChild(tr);
+          weak.appendChild(item);
+        });
+      } else {
+        weak.innerHTML = '<div class="empty">Пока никто не ошибался - или ещё не отвечали.</div>';
+      }
+
+      var abs = $('absent');
+      abs.innerHTML = '';
+      if (r.absentees && r.absentees.length){
+        var names = document.createElement('div'); names.className = 'names';
+        r.absentees.forEach(function(n){
+          var s = document.createElement('span'); s.textContent = n; names.appendChild(s);
+        });
+        abs.appendChild(names);
+        var hint = document.createElement('p'); hint.className = 'hint';
+        hint.textContent = 'Единственное место со списком логинов - и это повод спросить, а не рейтинг.';
+        abs.appendChild(hint);
+      } else {
+        abs.innerHTML = '<div class="empty">Зашли все.</div>';
+      }
+    } else {
+      $('hpbox').style.display = 'none';
+      $('weakcard').style.display = 'none';
+      $('part').textContent = '-';
+      $('bank').textContent = '-';
+    }
+
+    drawPending(d.pending || []);
+
+    var link = location.origin + '/join?code=' + d.class.code;
+    $('joinlink').textContent = link;
+    $('copy').addEventListener('click', function(){
+      navigator.clipboard && navigator.clipboard.writeText(link);
+      $('copy').textContent = 'Скопировано';
+      setTimeout(function(){ $('copy').textContent = 'Копировать'; }, 1500);
+    });
+  }
+
+  $('nraid').addEventListener('click', createRaid);
+  $('ntopic').addEventListener('keydown', function(e){ if (e.key === 'Enter') createRaid(); });
+
+  $('refresh').addEventListener('click', function(){ location.reload(); });
+  $('extend').addEventListener('click', function(){
+    fetch(api('/api/extend'), {method: 'POST'})
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (res.error) return alert(res.error);
+        location.reload();
+      });
+  });
+
+  if (!saved){
+    fail('Нужна личная ссылка учителя. Её показывают «пилот.command» и «панель.command».');
+  } else {
+    fetch(api('/api/teacher')).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) return fail(d.error);
+      paint(d);
+    }).catch(function(){ fail('Не удалось загрузить панель. Обновите страницу.'); });
+  }
+})();
+</script>
+</body>
+</html>

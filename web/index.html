@@ -1,0 +1,659 @@
+<title>Арена «Босс темы»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700;800&family=PT+Sans:wght@400;700&display=swap">
+<style>
+  :root{
+    --ground:#EDE4D6; --paper:#FBF6EE; --ink:#2B211A; --ink-soft:#6E6156; --line:#D9CCB8;
+    --rust:#B24328; --moss:#5C6B3C;
+    --shadow:0 1px 2px rgba(43,33,26,.10), 0 8px 24px rgba(43,33,26,.08);
+    --display:"Bitter",Georgia,"Times New Roman",serif;
+    --body:"PT Sans","Segoe UI",Arial,sans-serif;
+    /* игровой экран — всегда ночной лес */
+    --g-bg:#15191F; --g-panel:#1E242B; --g-line:#323B44; --g-ink:#F2EADC; --g-soft:#A9B0A8;
+    --g-gold:#F0C35A; --g-red:#D9573A; --g-green:#8DBE5C; --g-chip:#F6E7C8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#141110; --paper:#211B17; --ink:#F0E7DA; --ink-soft:#A2958A; --line:#3A3028;
+      --rust:#D9603F; --moss:#8CA059; --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#141110; --paper:#211B17; --ink:#F0E7DA; --ink-soft:#A2958A; --line:#3A3028;
+    --rust:#D9603F; --moss:#8CA059; --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px rgba(0,0,0,.35);
+  }
+
+  [hidden]{display:none !important;}
+  body{background:var(--ground);color:var(--ink);font-family:var(--body);line-height:1.5;}
+  .wrap{max-width:920px;margin:0 auto;padding-inline:16px;padding-block:24px 40px;display:flex;flex-direction:column;gap:20px;}
+  .intro h1{font-family:var(--display);font-weight:700;font-size:clamp(24px,5vw,32px);margin:0 0 6px;text-wrap:balance;}
+  .intro p{margin:0;color:var(--ink-soft);max-width:64ch;}
+  .layout{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start;}
+
+  /* ===== телефон ===== */
+  .phone{width:390px;max-width:100%;flex:0 0 auto;background:var(--g-bg);color:var(--g-ink);border-radius:28px;overflow:hidden;box-shadow:0 18px 40px rgba(20,16,12,.35);border:1px solid #0B0D10;}
+  .top{padding:12px 14px 10px;display:grid;gap:7px;background:linear-gradient(180deg,#1B2129,#161B21);}
+  .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .boss-name{font-family:var(--display);font-weight:800;font-size:17px;margin:0;letter-spacing:.01em;}
+  .boss-name small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--g-soft);margin-left:6px;}
+  .hpnum{font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;}
+  .hpnum span{color:var(--g-soft);font-weight:400;}
+  .hpbar{position:relative;height:16px;border-radius:9px;background:#0C0F12;border:1px solid var(--g-line);overflow:hidden;}
+  .hp-chip,.hp-fill{position:absolute;inset:0 auto 0 0;width:100%;}
+  .hp-chip{background:var(--g-chip);transition:width .6s ease .45s;}
+  .hp-fill{background:linear-gradient(90deg,#B8321C,#E0662F 55%,#F0C35A);transition:width .25s ease-out;}
+  .hp-seg{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);pointer-events:none;}
+  .hp-seg i{border-right:2px solid rgba(12,15,18,.85);}
+  .hp-seg i:last-child{border-right:0;}
+  .hpbar.pulse{animation:barpulse .5s ease;}
+  @keyframes barpulse{40%{box-shadow:0 0 0 3px rgba(240,195,90,.35)}}
+  .status{display:flex;justify-content:space-between;font-size:12px;color:var(--g-soft);}
+  .streak{color:var(--g-gold);font-weight:700;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;}
+  .streak.on{opacity:1;transform:scale(1);}
+
+  /* арена */
+  .arena{position:relative;height:370px;overflow:hidden;
+    background:
+      radial-gradient(90px 90px at 82% 16%, rgba(246,231,200,.95) 0 38%, rgba(246,231,200,.18) 40%, transparent 70%),
+      linear-gradient(180deg,#1A2130 0%,#223040 45%,#2B3A34 72%,#2A2A1F 100%);}
+  .arena.quake{animation:quake .35s ease;}
+  @keyframes quake{20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(2px,0)}}
+  .trees{position:absolute;inset:auto 0 44px 0;height:190px;}
+  .trees svg{width:100%;height:100%;display:block;}
+  .floor{position:absolute;inset:auto 0 0 0;height:70px;background:linear-gradient(180deg,#2D3324,#1F2319);}
+  .boss[data-boss="chuch"] img{transform-origin:50% 100%;}
+  .boss[data-boss="chuch"][data-stage="hp4"] img{filter:saturate(.92);}
+  .boss[data-boss="chuch"][data-stage="hp3"] img{filter:saturate(.8) brightness(.96);rotate:-3deg;}
+  .boss[data-boss="chuch"][data-stage="hp2"] img{filter:saturate(.65) brightness(.92);rotate:-6deg;}
+  .boss[data-boss="chuch"][data-stage="hp1"] img{filter:saturate(.45) brightness(.88);rotate:-9deg;}
+  .boss[data-boss="chuch"][data-stage="hp0"] img{filter:grayscale(.6) brightness(.85);rotate:-80deg;translate:0 12%;}
+  .boss .shadow{position:absolute;left:50%;bottom:0;width:60%;height:16px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(0,0,0,.34),rgba(0,0,0,.14) 55%,transparent);pointer-events:none;}
+  .boss.down[data-boss="bobrgus"] .shadow{width:80%;}
+
+  /* ===== сцена «рыбалка» для Бобра на Гусе ===== */
+  .lake{position:absolute;inset:0;display:none;pointer-events:none;}
+  .lake svg{width:100%;height:100%;display:block;}
+  .arena[data-scene="lake"]{background:linear-gradient(180deg,#2A4A6B 0%,#4F7797 26%,#8FB0C4 46%,#E9B98F 62%,#E9B98F 74%);}
+  .arena[data-scene="lake"] .lake{display:block;}
+  .arena[data-scene="lake"] .trees{display:none;}
+  .arena[data-scene="lake"] .floor{display:none;}
+  .arena[data-scene="lake"] .floor::after{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(180deg,rgba(214,200,150,.55),transparent);}
+  .lake .cloud{animation:cloud 26s ease-in-out infinite alternate;}
+  .lake .cloud.c2{animation-duration:34s;animation-delay:-8s;}
+  @keyframes cloud{from{transform:translateX(-14px)}to{transform:translateX(18px)}}
+  .lake .gull{animation:gull 16s linear infinite;}
+  .lake .gull.g2{animation-duration:22s;animation-delay:-9s;}
+  @keyframes gull{0%{transform:translate(-60px,0)}50%{transform:translate(220px,-10px)}100%{transform:translate(460px,4px)}}
+  .lake .wing{animation:flap .6s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.4)}}
+  .lake .ripples{animation:ripple 5s ease-in-out infinite alternate;}
+  .lake .ripples.r2{animation-duration:7s;animation-direction:alternate-reverse;}
+  @keyframes ripple{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
+  .lake .shine{animation:shine 2.4s ease-in-out infinite alternate;}
+  @keyframes shine{from{opacity:.35}to{opacity:.8}}
+  .lake .reeds{transform-box:fill-box;transform-origin:50% 100%;animation:sway 4.2s ease-in-out infinite alternate;}
+  .lake .reeds.r-b{animation-duration:5.3s;animation-delay:-2s;}
+  @keyframes sway{from{transform:rotate(-2.2deg)}to{transform:rotate(2.2deg)}}
+  .lake .float{animation:bob 1.8s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  .lake .ring{transform-box:fill-box;transform-origin:50% 50%;animation:ring 2.6s ease-out infinite;}
+  .lake .ring.q2{animation-delay:-1.3s;}
+  @keyframes ring{from{transform:scale(.3);opacity:.8}to{transform:scale(1.6);opacity:0}}
+  .bucket{position:absolute;left:6px;bottom:14px;width:34px;height:34px;display:none;}
+  .arena[data-scene="lake"] .bucket{display:block;}
+  canvas.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+  .boss{position:absolute;left:50%;bottom:28px;width:340px;height:340px;transform:translateX(-50%);}
+  .breath{position:absolute;inset:0;transform-origin:50% 98%;animation:breathe var(--breath,3.2s) ease-in-out infinite;}
+  @keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.012,1.028)}}
+  .tremble{position:absolute;inset:0;}
+  .boss.weak .tremble{animation:tremble .18s linear infinite;}
+  @keyframes tremble{0%{transform:translateX(0)}25%{transform:translateX(-1px)}75%{transform:translateX(1px)}}
+  .boss img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom center;transition:filter .9s ease, transform .9s cubic-bezier(.5,0,.6,1);}
+  .boss.flash img{animation:flash .28s ease;}
+  @keyframes flash{0%{filter:brightness(1)}30%{filter:brightness(2.4) saturate(.4)}100%{filter:brightness(1)}}
+  .boss.recoil .breath{animation:recoil .35s ease, breathe var(--breath,3.2s) ease-in-out .35s infinite;}
+  @keyframes recoil{0%{transform:translateX(0) rotate(0)}35%{transform:translateX(10px) rotate(2.5deg)}100%{transform:translateX(0) rotate(0)}}
+  .boss.gloat .breath{animation:gloat .5s ease, breathe var(--breath,3.2s) ease-in-out .5s infinite;}
+  @keyframes gloat{0%{transform:translateY(0)}30%{transform:translateY(-12px) scale(1.03)}60%{transform:translateY(0)}80%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+  .boss.down img{filter:grayscale(.65) brightness(.85);transform:rotate(-6deg) translateY(6px);}
+  .boss.down .breath{animation:none;}
+  .boss.down[data-boss="bobrgus"] img{transform:none;filter:grayscale(.5) brightness(.9);}
+
+  .dmg{position:absolute;left:50%;top:30%;font-family:var(--display);font-weight:800;font-size:34px;color:#FFE08A;text-shadow:0 3px 0 #7A2A12, 0 0 14px rgba(0,0,0,.6);pointer-events:none;white-space:nowrap;animation:dmg 1s ease-out forwards;}
+  .dmg small{display:block;font-size:13px;font-family:var(--body);font-weight:700;color:#F6E7C8;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;}
+  @keyframes dmg{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}15%{opacity:1;transform:translate(-50%,0) scale(1.15)}30%{transform:translate(-50%,-6px) scale(1)}100%{opacity:0;transform:translate(-50%,-60px) scale(1)}}
+
+  .feed{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:5px;max-width:62%;pointer-events:none;}
+  .feed div{font-size:12px;background:rgba(12,15,18,.72);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px 10px;color:var(--g-ink);animation:feedin .3s ease;}
+  .feed div b{color:var(--g-gold);}
+  .feed div.out{opacity:0;transform:translateX(-10px);transition:opacity .4s,transform .4s;}
+  @keyframes feedin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+
+  .banner{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.6);opacity:0;font-family:var(--display);font-weight:800;font-size:24px;color:#FFF3D6;letter-spacing:.02em;text-shadow:0 3px 0 #6E2410,0 0 18px rgba(217,87,58,.8);white-space:nowrap;pointer-events:none;}
+  .banner.show{animation:banner 1.7s ease forwards;}
+  @keyframes banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1)}}
+
+  /* реплика */
+  .bark{position:relative;margin:0;padding:10px 14px;background:var(--g-panel);border-top:1px solid var(--g-line);border-bottom:1px solid var(--g-line);font-size:14px;min-height:42px;}
+  .bark::before{content:"";position:absolute;left:50%;top:-8px;width:14px;height:14px;background:var(--g-panel);border-left:1px solid var(--g-line);border-top:1px solid var(--g-line);transform:translateX(-50%) rotate(45deg);}
+  .bark b{font-family:var(--display);color:var(--g-gold);}
+  .bark.pop{animation:pop .3s ease;}
+  @keyframes pop{0%{transform:scale(.97)}60%{transform:scale(1.01)}100%{transform:none}}
+
+  /* вопрос */
+  .quiz{padding:12px 14px 14px;display:grid;gap:10px;}
+  .q{font-family:var(--display);font-weight:700;font-size:17px;margin:0;text-wrap:balance;}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .opt{font:inherit;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;padding:12px 10px;border-radius:14px;border:1px solid var(--g-line);background:#232A32;color:var(--g-ink);cursor:pointer;box-shadow:0 3px 0 #0C0F12;transition:transform .08s, box-shadow .08s, background .15s, border-color .15s;}
+  .opt:hover{border-color:#56626C;}
+  .opt:active{transform:translateY(3px);box-shadow:0 0 0 #0C0F12;}
+  .opt:focus-visible{outline:2px solid var(--g-gold);outline-offset:2px;}
+  .opt.right{background:#2F4A26;border-color:var(--g-green);animation:okpulse .5s ease;}
+  .opt.wrong{background:#4A2420;border-color:var(--g-red);animation:nope .35s ease;}
+  .opt[disabled]{cursor:default;}
+  @keyframes okpulse{50%{transform:scale(1.04)}}
+  @keyframes nope{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+  .foot{display:flex;justify-content:space-between;font-size:12px;color:var(--g-soft);}
+
+  /* вопросы от ученика */
+  .myq{padding:12px 14px 14px;display:grid;gap:9px;border-top:1px solid var(--g-line);}
+  .myqhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .myqhead .t{font-family:var(--display);font-weight:700;font-size:15px;color:var(--g-ink);}
+  .myqhead .d{font-size:12px;color:var(--g-green);font-variant-numeric:tabular-nums;}
+  .myqitem{border:1px solid #3F5C33;background:#232F1F;border-radius:12px;padding:10px 12px;display:grid;gap:3px;}
+  .myqitem b{font-size:14px;font-weight:700;color:var(--g-ink);}
+  .myqitem span{font-size:12px;color:var(--g-green);}
+  .myqbtn{font:inherit;font-weight:700;font-size:14px;padding:11px;border-radius:12px;border:1px dashed var(--g-line);background:transparent;color:var(--g-gold);cursor:pointer;}
+  .myqbtn:hover{border-color:var(--g-gold);}
+  .myqbtn:focus-visible{outline:2px solid var(--g-gold);outline-offset:2px;}
+  .myqnote{margin:0;font-size:11px;color:var(--g-soft);text-align:center;}
+
+  .win{padding:16px 14px 18px;text-align:center;display:grid;gap:8px;justify-items:center;}
+  .win h2{font-family:var(--display);font-weight:800;margin:0;font-size:22px;color:var(--g-gold);}
+  .win p{margin:0;color:var(--g-soft);font-size:14px;max-width:32ch;}
+  .again{font:inherit;font-weight:700;padding:10px 18px;border-radius:12px;border:0;background:var(--g-gold);color:#2B1F0C;cursor:pointer;box-shadow:0 3px 0 #8A6420;}
+  .again:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+
+  /* ===== панель мокапа ===== */
+  .panel{flex:1 1 300px;min-width:260px;display:flex;flex-direction:column;gap:14px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);}
+  .card h3{font-family:var(--display);font-size:15px;margin:0 0 10px;}
+  .bosspick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+  #bossNote{margin:0 0 10px;}
+  .stages{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+  .sbtn{font:inherit;font-size:12px;padding:8px 2px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;}
+  .sbtn[aria-pressed="true"]{background:var(--rust);border-color:var(--rust);color:#FFF6EE;}
+  .sbtn:focus-visible,.lnk:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+  .lnk{font:inherit;font-size:13px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;}
+  .toggle{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px;}
+  .toggle input{accent-color:var(--rust);width:16px;height:16px;}
+  .facts{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:13px;color:var(--ink-soft);}
+  .facts b{color:var(--ink);}
+  .note{font-size:13px;color:var(--ink-soft);margin:0;}
+  .note strong{color:var(--ink);}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  }
+</style>
+
+
+<style>
+  body{background:var(--g-bg,#15191F)}
+  .wrap{max-width:520px;margin:0 auto;padding:14px 12px 28px}
+  .layout{display:block}
+  .phone{max-width:100%;margin:0 auto}
+  .toplinks{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    margin:12px 2px 0;font-size:13px}
+  .toplinks a,.toplinks button{background:none;border:0;padding:0;font:inherit;cursor:pointer;
+    color:#A9B0A8;text-decoration:underline;text-underline-offset:3px}
+  .loading{color:#A9B0A8;font-size:14px;padding:20px 4px}
+  .failbox{display:none;margin:12px 2px 0;padding:12px 14px;border-radius:12px;
+    background:#3A2320;color:#F0B4A4;font-size:13.5px}
+  .failbox.on{display:block}
+</style>
+
+<div class="wrap">
+  <div class="layout">
+<section class="phone" aria-label="Экран ученика">
+      <div class="top">
+        <div class="top-row">
+          <h2 class="boss-name"><span id="bossName">Босс</span><small id="bossSub">тема</small></h2>
+          <div class="hpnum"><b id="hpNow">0</b> <span>/ <i id="hpMax">0</i></span></div>
+        </div>
+        <div class="hpbar" id="hpbar" role="meter" aria-label="Здоровье босса" aria-valuemin="0" aria-valuemax="520" aria-valuenow="520">
+          <div class="hp-chip" id="hpChip"></div>
+          <div class="hp-fill" id="hpFill"></div>
+          <div class="hp-seg"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="status"><span id="stageName">Полна сил</span><span class="streak" id="streak">Серия ×2</span></div>
+      </div>
+
+      <div class="arena" id="arena">
+        <div class="trees" aria-hidden="true">
+          <svg viewBox="0 0 390 190" preserveAspectRatio="none">
+            <g fill="#1C2A2A">
+              <polygon points="0,190 18,70 36,190"/><polygon points="26,190 52,40 78,190"/><polygon points="70,190 90,95 110,190"/>
+              <polygon points="280,190 302,60 324,190"/><polygon points="318,190 345,30 372,190"/><polygon points="360,190 380,90 400,190"/>
+            </g>
+            <g fill="#141F1F">
+              <polygon points="-10,190 12,105 34,190"/><polygon points="40,190 62,120 84,190"/>
+              <polygon points="300,190 326,100 352,190"/><polygon points="350,190 372,125 394,190"/>
+            </g>
+          </svg>
+        </div>
+        <div class="lake" aria-hidden="true">
+          <svg viewBox="0 0 390 370" preserveAspectRatio="xMidYMax slice">
+            <defs>
+              <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFE3B0" stop-opacity=".9"/>
+                <stop offset="45%" stop-color="#FFC98A" stop-opacity=".35"/>
+                <stop offset="100%" stop-color="#FFC98A" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7E8B4C"/><stop offset="35%" stop-color="#65703F"/><stop offset="100%" stop-color="#434C2C"/>
+              </linearGradient>
+              <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6E9CAA"/><stop offset="45%" stop-color="#3F7384"/><stop offset="100%" stop-color="#2B5563"/>
+              </linearGradient>
+            </defs>
+            <circle cx="330" cy="130" r="74" fill="url(#sunGlow)"/>
+            <circle cx="330" cy="132" r="21" fill="#FFE7BF"/>
+            <g class="cloud" fill="#E4ECF1" opacity=".55"><ellipse cx="70" cy="46" rx="38" ry="11"/><ellipse cx="96" cy="38" rx="24" ry="12"/><ellipse cx="48" cy="40" rx="18" ry="9"/></g>
+            <g class="cloud c2" fill="#E4ECF1" opacity=".4"><ellipse cx="250" cy="28" rx="34" ry="8"/><ellipse cx="272" cy="22" rx="20" ry="9"/></g>
+            <g class="gull" fill="none" stroke="#1F3347" stroke-width="2" stroke-linecap="round"><path class="wing" d="M0 60 q6 -6 12 0 q6 -6 12 0"/></g>
+            <g class="gull g2" fill="none" stroke="#1F3347" stroke-width="1.6" stroke-linecap="round"><path class="wing" d="M0 88 q5 -5 10 0 q5 -5 10 0"/></g>
+            <!-- лес -->
+            <path d="M-10 262 L-10 167 Q0 166 10 178 Q22 149 34 162 Q47 153 59 164 Q75 153 90 166 Q107 162 124 179 Q133 169 142 180 Q152 152 162 168 Q176 163 190 177 Q199 152 209 165 Q221 154 233 170 Q245 164 256 179 Q270 157 283 176 Q295 173 306 184 Q321 151 336 164 Q350 164 365 182 Q376 163 388 179 Q400 163 413 181 L400 262 Z" fill="#6F8C86"/><g fill="#4C6B62"><polygon points="-10.0,262.0 -5.8,236.9 -8.1,236.9 -3.5,213.2 -5.3,213.2 1.7,188.1 8.7,213.2 6.8,213.2 11.4,236.9 9.1,236.9 13.3,262.0"/><polygon points="4.5,262.0 8.7,230.5 6.3,230.5 11.1,200.8 9.2,200.8 16.3,169.3 23.3,200.8 21.5,200.8 26.2,230.5 23.8,230.5 28.1,262.0"/><polygon points="19.1,262.0 23.8,228.6 21.2,228.6 26.4,197.1 24.3,197.1 32.1,163.7 39.8,197.1 37.8,197.1 43.0,228.6 40.4,228.6 45.0,262.0"/><polygon points="35.2,262.0 38.8,233.3 36.8,233.3 40.9,206.3 39.2,206.3 45.3,177.7 51.4,206.3 49.8,206.3 53.8,233.3 51.8,233.3 55.5,262.0"/><polygon points="47.8,262.0 52.0,237.3 49.6,237.3 54.3,214.0 52.4,214.0 59.4,189.3 66.4,214.0 64.6,214.0 69.2,237.3 66.9,237.3 71.1,262.0"/><polygon points="62.2,262.0 66.1,235.7 64.0,235.7 68.3,210.9 66.6,210.9 73.1,184.6 79.6,210.9 77.8,210.9 82.2,235.7 80.0,235.7 83.9,262.0"/><polygon points="75.7,262.0 79.1,236.9 77.2,236.9 81.0,213.2 79.5,213.2 85.1,188.1 90.8,213.2 89.3,213.2 93.1,236.9 91.2,236.9 94.6,262.0"/><polygon points="87.4,262.0 91.8,236.1 89.3,236.1 94.2,211.7 92.2,211.7 99.5,185.9 106.7,211.7 104.8,211.7 109.6,236.1 107.2,236.1 111.6,262.0"/><polygon points="102.4,262.0 106.0,233.3 104.0,233.3 108.0,206.2 106.4,206.2 112.4,177.5 118.4,206.2 116.8,206.2 120.8,233.3 118.8,233.3 122.4,262.0"/><polygon points="114.8,262.0 119.3,236.6 116.8,236.6 121.8,212.8 119.8,212.8 127.3,187.4 134.8,212.8 132.8,212.8 137.8,236.6 135.3,236.6 139.7,262.0"/><polygon points="130.3,262.0 134.1,231.5 132.0,231.5 136.3,202.9 134.6,202.9 141.1,172.4 147.5,202.9 145.8,202.9 150.1,231.5 148.0,231.5 151.9,262.0"/><polygon points="143.6,262.0 148.2,228.6 145.7,228.6 150.7,197.2 148.7,197.2 156.2,163.8 163.7,197.2 161.7,197.2 166.7,228.6 164.2,228.6 168.7,262.0"/><polygon points="159.2,262.0 163.7,234.5 161.2,234.5 166.2,208.6 164.2,208.6 171.6,181.1 179.1,208.6 177.1,208.6 182.1,234.5 179.6,234.5 184.1,262.0"/><polygon points="174.6,262.0 178.5,233.6 176.3,233.6 180.6,206.9 178.9,206.9 185.3,178.5 191.7,206.9 190.0,206.9 194.3,233.6 192.1,233.6 196.0,262.0"/><polygon points="187.9,262.0 192.4,227.1 189.9,227.1 194.9,194.3 192.9,194.3 200.4,159.4 207.9,194.3 205.9,194.3 210.9,227.1 208.4,227.1 212.9,262.0"/><polygon points="203.4,262.0 206.9,235.6 204.9,235.6 208.8,210.8 207.2,210.8 213.0,184.4 218.8,210.8 217.2,210.8 221.1,235.6 219.1,235.6 222.6,262.0"/><polygon points="215.3,262.0 218.9,235.0 216.9,235.0 220.9,209.6 219.3,209.6 225.2,182.5 231.2,209.6 229.6,209.6 233.6,235.0 231.6,235.0 235.2,262.0"/><polygon points="227.6,262.0 231.6,231.1 229.4,231.1 233.7,202.0 232.0,202.0 238.6,171.1 245.1,202.0 243.4,202.0 247.7,231.1 245.6,231.1 249.5,262.0"/><polygon points="241.2,262.0 244.8,237.5 242.8,237.5 246.8,214.4 245.2,214.4 251.2,189.9 257.3,214.4 255.7,214.4 259.7,237.5 257.7,237.5 261.3,262.0"/><polygon points="253.6,262.0 257.5,233.5 255.4,233.5 259.6,206.7 257.9,206.7 264.3,178.2 270.7,206.7 269.0,206.7 273.3,233.5 271.2,233.5 275.0,262.0"/><polygon points="266.9,262.0 270.9,227.2 268.7,227.2 273.2,194.4 271.4,194.4 278.2,159.5 284.9,194.4 283.1,194.4 287.6,227.2 285.4,227.2 289.4,262.0"/><polygon points="280.9,262.0 285.1,231.9 282.7,231.9 287.4,203.6 285.6,203.6 292.6,173.5 299.7,203.6 297.8,203.6 302.5,231.9 300.1,231.9 304.4,262.0"/><polygon points="295.4,262.0 299.6,230.2 297.3,230.2 301.9,200.2 300.0,200.2 306.9,168.4 313.8,200.2 312.0,200.2 316.5,230.2 314.3,230.2 318.4,262.0"/><polygon points="309.7,262.0 313.0,227.7 311.1,227.7 314.8,195.5 313.3,195.5 318.9,161.2 324.4,195.5 322.9,195.5 326.6,227.7 324.8,227.7 328.1,262.0"/><polygon points="321.1,262.0 325.5,228.0 323.0,228.0 327.9,196.0 325.9,196.0 333.2,162.0 340.5,196.0 338.5,196.0 343.4,228.0 341.0,228.0 345.3,262.0"/><polygon points="336.1,262.0 340.5,233.3 338.1,233.3 342.9,206.2 341.0,206.2 348.3,177.4 355.6,206.2 353.7,206.2 358.6,233.3 356.1,233.3 360.5,262.0"/><polygon points="351.2,262.0 355.1,236.4 352.9,236.4 357.2,212.3 355.5,212.3 361.8,186.7 368.2,212.3 366.5,212.3 370.7,236.4 368.6,236.4 372.4,262.0"/><polygon points="364.4,262.0 368.5,236.8 366.2,236.8 370.8,213.2 369.0,213.2 375.9,188.0 382.8,213.2 381.0,213.2 385.6,236.8 383.3,236.8 387.4,262.0"/><polygon points="378.7,262.0 382.0,235.2 380.2,235.2 383.9,210.1 382.4,210.1 388.0,183.3 393.5,210.1 392.0,210.1 395.7,235.2 393.9,235.2 397.2,262.0"/><polygon points="390.2,262.0 393.6,233.8 391.7,233.8 395.6,207.3 394.0,207.3 399.8,179.1 405.6,207.3 404.1,207.3 407.9,233.8 406.0,233.8 409.5,262.0"/></g><path d="M-10 262 L-10 203 Q-1 196 8 207 Q17 203 26 217 Q37 197 48 208 Q64 206 80 221 Q90 193 99 205 Q115 196 131 210 Q144 192 157 205 Q170 203 184 222 Q195 199 206 212 Q219 204 232 216 Q248 203 263 223 Q279 204 294 217 Q306 194 318 204 Q329 197 340 216 Q357 202 373 220 Q384 196 395 207 Q409 202 423 219 L400 262 Z" fill="#3F5C50"/><g fill="#2A463D"><polygon points="-14.0,262.0 -8.5,213.0 -11.6,213.0 -5.5,167.0 -7.9,167.0 1.3,118.0 10.4,167.0 8.0,167.0 14.1,213.0 11.0,213.0 16.5,262.0"/><polygon points="7.4,262.0 11.8,214.9 9.4,214.9 14.3,170.6 12.3,170.6 19.8,123.6 27.2,170.6 25.3,170.6 30.2,214.9 27.7,214.9 32.2,262.0"/><polygon points="24.8,262.0 30.7,213.3 27.4,213.3 34.0,167.4 31.4,167.4 41.3,118.7 51.2,167.4 48.6,167.4 55.2,213.3 51.9,213.3 57.9,262.0"/><polygon points="47.9,262.0 53.6,217.4 50.5,217.4 56.8,175.5 54.2,175.5 63.7,130.9 73.1,175.5 70.6,175.5 76.9,217.4 73.8,217.4 79.4,262.0"/><polygon points="70.0,262.0 74.6,213.2 72.0,213.2 77.2,167.2 75.1,167.2 82.9,118.4 90.6,167.2 88.5,167.2 93.7,213.2 91.1,213.2 95.8,262.0"/></g><g fill="#2A463D"><polygon points="300.0,262.0 304.9,216.0 302.2,216.0 307.7,172.7 305.5,172.7 313.7,126.8 321.9,172.7 319.7,172.7 325.1,216.0 322.4,216.0 327.3,262.0"/><polygon points="319.1,262.0 325.2,220.7 321.8,220.7 328.6,181.8 325.9,181.8 336.0,140.5 346.1,181.8 343.4,181.8 350.1,220.7 346.8,220.7 352.8,262.0"/><polygon points="342.7,262.0 347.8,214.3 345.0,214.3 350.6,169.5 348.3,169.5 356.7,121.8 365.1,169.5 362.9,169.5 368.5,214.3 365.7,214.3 370.7,262.0"/><polygon points="362.3,262.0 368.0,223.3 364.8,223.3 371.1,186.9 368.6,186.9 378.0,148.2 387.3,186.9 384.8,186.9 391.1,223.3 388.0,223.3 393.6,262.0"/><polygon points="384.2,262.0 388.8,223.5 386.2,223.5 391.3,187.3 389.3,187.3 396.8,148.9 404.4,187.3 402.4,187.3 407.5,223.5 404.9,223.5 409.5,262.0"/><polygon points="401.9,262.0 407.9,216.0 404.5,216.0 411.2,172.6 408.5,172.6 418.4,126.6 428.3,172.6 425.7,172.6 432.3,216.0 429.0,216.0 435.0,262.0"/></g>
+            <!-- поляна -->
+            <path d="M-10 262 Q120 256 240 262 Q320 266 400 260 L400 380 L-10 380 Z" fill="url(#grass)"/>
+            <path d="M-10 262 Q120 256 240 262 Q320 266 400 260" fill="none" stroke="#9AA565" stroke-width="3" opacity=".6"/>
+            <!-- озеро сбоку -->
+            <path d="M232 268 Q262 258 320 259 Q370 258 400 262 L400 318 Q352 322 300 312 Q248 304 234 288 Q226 278 232 268 Z" fill="url(#water)"/>
+            <path d="M232 268 Q262 258 320 259 Q370 258 400 262" fill="none" stroke="#C9DDE2" stroke-width="1.2" opacity=".5"/>
+            <g class="shine" stroke="#FFD9A6" stroke-linecap="round">
+              <line x1="314" y1="268" x2="350" y2="268" stroke-width="2.2"/><line x1="320" y1="276" x2="346" y2="276" stroke-width="1.8"/>
+              <line x1="312" y1="286" x2="340" y2="286" stroke-width="1.6"/><line x1="322" y1="298" x2="348" y2="298" stroke-width="1.4"/>
+            </g>
+            <g class="ripples" stroke="#A8CDD7" stroke-width="1.3" stroke-linecap="round" opacity=".45">
+              <line x1="252" y1="276" x2="280" y2="276"/><line x1="262" y1="294" x2="296" y2="294"/><line x1="356" y1="306" x2="384" y2="306"/>
+            </g>
+            <!-- мостки -->
+            <rect x="344" y="282" width="5" height="26" fill="#3E2E20"/><rect x="376" y="282" width="5" height="28" fill="#3E2E20"/>
+            <path d="M334 276 L392 274 L392 285 L334 287 Z" fill="#8A6641"/><path d="M334 281 L392 279" stroke="#6B4E31" stroke-width="1"/>
+            <!-- удочка и поплавок -->
+            <path d="M388 276 L318 48" stroke="#5B3B22" stroke-width="3" stroke-linecap="round"/>
+            <path d="M318 48 Q296 170 290 286" fill="none" stroke="#E8EEF1" stroke-width=".8" opacity=".8"/>
+            <g class="float"><ellipse cx="290" cy="288" rx="3.2" ry="4.8" fill="#F4F4F0"/><path d="M286.8 288 A3.2 4.8 0 0 1 293.2 288 Z" fill="#E0452F"/></g>
+            <ellipse class="ring" cx="290" cy="292" rx="11" ry="2.8" fill="none" stroke="#CFE6EC" stroke-width="1"/>
+            <ellipse class="ring q2" cx="290" cy="292" rx="11" ry="2.8" fill="none" stroke="#CFE6EC" stroke-width="1"/>
+            <!-- камыши у озера и по краю -->
+            <g class="reeds" stroke="#3E5A2C" stroke-width="2.2" stroke-linecap="round" fill="none">
+              <path d="M236 292 Q232 250 238 214"/><path d="M244 296 Q246 262 252 236"/><path d="M228 290 Q224 266 226 246"/>
+            </g>
+            <g class="reeds" fill="#6B4527"><rect x="235" y="214" width="6" height="24" rx="3"/><rect x="249" y="236" width="6" height="20" rx="3"/></g>
+            <g class="reeds r-b" stroke="#3E5A2C" stroke-width="2.2" stroke-linecap="round" fill="none">
+              <path d="M8 330 Q4 280 10 236"/><path d="M18 332 Q20 290 26 262"/>
+            </g>
+            <g class="reeds r-b" fill="#6B4527"><rect x="7" y="236" width="6" height="24" rx="3"/></g>
+            <!-- кочки и тень под героями -->
+            <g fill="#8C9658" opacity=".55"><ellipse cx="60" cy="300" rx="14" ry="3"/><ellipse cx="150" cy="276" rx="12" ry="2.5"/><ellipse cx="96" cy="352" rx="18" ry="3"/><ellipse cx="300" cy="350" rx="16" ry="3"/></g>
+          </svg>
+        </div>
+        <div class="floor"></div>
+        <svg class="bucket" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4 q6 -4 9 2 l-4 8 z" fill="#9FB3BF"/><path d="M6 12 L34 12 L30 36 L10 36 Z" fill="#7F919C"/><path d="M6 12 L34 12" stroke="#5E6E77" stroke-width="2"/><path d="M8 12 Q20 -2 32 12" fill="none" stroke="#4F5C63" stroke-width="1.5"/></svg>
+        <canvas class="fx" id="fireflies" aria-hidden="true"></canvas>
+        <div class="boss" id="boss">
+          <div class="shadow" id="shadow"></div>
+          <div class="breath"><div class="tremble"><img id="sprite" alt="Баба Яга"></div></div>
+        </div>
+        <canvas class="fx" id="sparks" aria-hidden="true"></canvas>
+        <div class="feed" id="feed" aria-live="polite"></div>
+        <div class="banner" id="banner"></div>
+      </div>
+
+      <p class="bark" id="bark">Загружаем рейд…</p>
+
+      <div class="quiz" id="quiz">
+        <p class="q" id="qText"></p>
+        <div class="opts" id="opts"></div>
+        <div class="foot"><span id="classLine">Сегодня били: 0 из 0</span><span>Твои удары: <b id="hits">0</b></span></div>
+      </div>
+
+      <div class="win" id="win" hidden>
+        <h2>Тема повержена!</h2>
+        <p>Класс снял всё здоровье босса. Ты нанёс <b id="winHits">0</b> ударов - до контрольной тема уже знакома.</p>
+        <button class="again" id="again" type="button">К другим рейдам класса</button>
+      </div>
+    </section>
+    <div class="failbox" id="fail"></div>
+    <div class="toplinks">
+      <button type="button" id="back">все рейды класса</button>
+      <button type="button" id="logout">это не я - сменить логин</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var qs = new URLSearchParams(location.search);
+  var initData = (window.WebApp && window.WebApp.initData) || '';
+  var saved = null;
+  try { saved = localStorage.getItem('boss_token'); } catch (e) {}
+  if (qs.get('t')) {
+    saved = qs.get('t');
+    try { localStorage.setItem('boss_token', saved); } catch (e) {}
+  }
+  if (!qs.get('t') && !qs.get('u') && !initData && !saved){
+    location.href = '/join' + (location.search || ''); return;
+  }
+
+  function params(){
+    var p = new URLSearchParams(location.search);
+    if (!p.get('t') && !initData && saved) p.set('t', saved);
+    if (initData) p.set('init_data', initData);
+    return p;
+  }
+  function api(path){ var s = params().toString(); return path + (s ? '?' + s : ''); }
+
+  // без номера рейда - сначала список открытых рейдов класса
+  if (!qs.get('raid')){
+    var pick = params(); pick.delete('raid');
+    var tail = pick.toString();
+    location.replace('/raids' + (tail ? '?' + tail : '')); return;
+  }
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function frames(slug){
+    var f = {};
+    ['hp5','hp4','hp3','hp2','hp1','hp0'].forEach(function(k){ f[k] = '/boss/' + slug + '-' + k + '.webp'; });
+    f['taunt-ok'] = f['taunt-low'] = '/boss/' + slug + '-taunt.webp';
+    return f;
+  }
+  var BOSSES = {
+    bobr: { name:'Курвабобр', who:'Курвабобр', scene:'lake', frames:frames('bobr'),
+      offset:{ hp1:30, hp0:38 }, weak:'Дуэт слабеет!', last:'Курвабобр вот-вот свалится!',
+      names:['Полны сил','Первые царапины','Заметно потрёпаны','Сильно потрёпаны','Еле держатся','Повержены'],
+      lines:['У нас пикник! А вы чего с учебниками?','Гусь велел передать: очки не трогать!','Эй, это был мой кусочек!','Селёдку не отдадим!','Гусь, заводи! Сваливаем!','Га… га… пикник окончен…'],
+      taunts:['Хы-хы! Ещё кусочек за неправильный ответ!','Мимо! Гусь, видал?','Ха! Запью соком!'] },
+    yaga: { name:'Баба Яга', who:'Яга', scene:'forest', frames:frames('yaga'),
+      weak:'Яга слабеет!', last:'Яга на последнем издыхании!',
+      names:['Полна сил','Первые царапины','Заметно потрёпана','Сильно потрёпана','Еле держится','Повержена'],
+      lines:['Ну что, кто первый?','Ах вы так?! Ну держитесь!','Ну погодите у меня…','Посох-то, посох мой!','Не губите старушку…','Ох… звёздочки…'],
+      taunts:['Мимо! Так и знала.','Хи-хи! Ещё разок?','Вот и попалась, пташка!'] }
+  };
+  var CUTS = [81, 61, 41, 21, 1];
+  var B = BOSSES.bobr, SCENE = 'lake', MAX = 1;
+
+  var sprite = $('sprite'), boss = $('boss'), arena = $('arena'), bark = $('bark');
+  var hpFill = $('hpFill'), hpChip = $('hpChip'), hpNow = $('hpNow'), hpbar = $('hpbar');
+  var stageName = $('stageName'), streakEl = $('streak'), feed = $('feed'), banner = $('banner');
+  var qText = $('qText'), opts = $('opts'), hitsEl = $('hits'), quiz = $('quiz');
+  var win = $('win'), winHits = $('winHits');
+
+  var S = { hp:0, myHits:0, streak:0, locked:false, qid:null, tauntTimer:null, nextTimer:null };
+
+  function pct(){ return MAX ? S.hp / MAX * 100 : 0; }
+  function stageIdx(hp){
+    if (hp <= 0) return 5;
+    var p = MAX ? hp / MAX * 100 : 0;
+    for (var i = 0; i < 5; i++){ if (p >= CUTS[i]) return i; }
+    return 4;
+  }
+  function stageId(i){ return ['hp5','hp4','hp3','hp2','hp1','hp0'][i]; }
+  function breathFor(i){ return [3.2, 2.9, 2.6, 2.4, 1.6, 0][i]; }
+  function restart(node, cls){ node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); }
+  function say(who, text){ bark.innerHTML = '<b>' + who + ':</b> ' + text; restart(bark, 'pop'); }
+
+  function paintStage(){
+    var i = stageIdx(S.hp), id = stageId(i);
+    sprite.src = B.frames[id];
+    boss.setAttribute('data-stage', id);
+    var off = (B.offset && B.offset[id]) || 0;
+    sprite.style.transform = off ? 'translateY(' + off + 'px)' : '';
+    $('shadow').style.transform = 'translateX(-50%) translateY(' + off + 'px)';
+    sprite.alt = B.name + ' - ' + B.names[i].toLowerCase();
+    boss.style.setProperty('--breath', (breathFor(i) || 3.2) + 's');
+    boss.classList.toggle('weak', id === 'hp1');
+    boss.classList.toggle('down', id === 'hp0');
+    stageName.textContent = B.names[i];
+  }
+  function paintHP(){
+    var w = Math.max(0, pct()) + '%';
+    hpFill.style.width = w; hpChip.style.width = w;
+    hpNow.textContent = Math.max(0, S.hp);
+    $('hpMax').textContent = MAX;
+    hpbar.setAttribute('aria-valuenow', Math.max(0, S.hp));
+    hpbar.setAttribute('aria-valuemax', MAX);
+  }
+  function feedLine(html){
+    var d = document.createElement('div'); d.innerHTML = html; feed.prepend(d);
+    while (feed.children.length > 3) feed.lastChild.remove();
+    setTimeout(function(){ d.classList.add('out'); setTimeout(function(){ d.remove(); }, 450); }, 2600);
+  }
+  function showBanner(text){ banner.textContent = text; restart(banner, 'show'); }
+
+  function damage(amount, who){
+    if (S.hp <= 0 || amount <= 0) return;
+    var before = stageIdx(S.hp);
+    S.hp = Math.max(0, S.hp - amount);
+    var after = stageIdx(S.hp);
+    clearTimeout(S.tauntTimer);
+    restart(boss, 'flash'); restart(boss, 'recoil');
+    spawnSparks();
+    var n = document.createElement('div');
+    n.className = 'dmg';
+    n.style.left = (44 + Math.random() * 12) + '%';
+    n.innerHTML = '−' + amount + '<small>' + who + '</small>';
+    arena.appendChild(n); setTimeout(function(){ n.remove(); }, 1000);
+    restart(hpbar, 'pulse');
+    paintHP();
+    if (after !== before){
+      restart(arena, 'quake');
+      if (after === 5){ victory(); }
+      else { showBanner(after === 4 ? B.last : B.weak); say(B.who, B.lines[after]); }
+    }
+    paintStage();
+  }
+  function taunt(text){
+    clearTimeout(S.tauntTimer);
+    sprite.src = B.frames[pct() > 40 ? 'taunt-ok' : 'taunt-low'];
+    sprite.style.transform = '';
+    restart(boss, 'gloat');
+    say(B.who, text || B.taunts[Math.floor(Math.random() * B.taunts.length)]);
+    S.tauntTimer = setTimeout(paintStage, 1500);
+  }
+  function victory(){
+    paintStage();
+    say(B.who, B.lines[5]);
+    showBanner('Победа класса!');
+    setTimeout(function(){
+      quiz.hidden = true; win.hidden = false; winHits.textContent = S.myHits; confetti();
+    }, 900);
+  }
+
+  function ask(q){
+    if (!q){
+      qText.textContent = 'Вопросы в этой теме кончились - возвращайся завтра или придумай свой.';
+      opts.innerHTML = ''; S.qid = null; return;
+    }
+    S.qid = q.id;
+    qText.textContent = q.text;
+    opts.innerHTML = '';
+    q.options.forEach(function(txt){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.type = 'button'; b.textContent = txt;
+      b.addEventListener('click', function(){ answer(b, txt); });
+      opts.appendChild(b);
+    });
+  }
+
+  function answer(btn, given){
+    if (S.locked || S.hp <= 0 || !S.qid) return;
+    S.locked = true;
+    Array.prototype.forEach.call(opts.children, function(b){ b.disabled = true; });
+    fetch(api('/api/answer'), {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question_id: S.qid, given: given})
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if (res.error){ S.locked = false; return fail(res.error); }
+      if (res.correct){
+        btn.classList.add('right');
+        S.streak += 1; S.myHits += 1;
+        hitsEl.textContent = S.myHits;
+        streakEl.textContent = 'Серия ×' + S.streak;
+        streakEl.classList.toggle('on', S.streak >= 2);
+        if (res.damage > 0){
+          damage(res.damage, 'ты');
+          feedLine('<b>Ты</b> · −' + res.damage);
+        } else {
+          say('Класс', res.skip_reason === 'daily_cap'
+            ? 'На сегодня твой лимит ударов исчерпан - приходи завтра.'
+            : 'Этот вопрос уже был засчитан.');
+        }
+      } else {
+        btn.classList.add('wrong');
+        S.streak = 0; streakEl.classList.remove('on');
+        taunt();
+      }
+      if (typeof res.hp_left === 'number' && res.hp_left < S.hp){
+        damage(S.hp - res.hp_left, 'класс');
+      }
+      clearTimeout(S.nextTimer);
+      S.nextTimer = setTimeout(function(){
+        S.locked = false;
+        if (!res.victory && S.hp > 0) ask(res.question);
+      }, 1200);
+    }).catch(function(){
+      S.locked = false;
+      fail('Нет связи с сервером. Проверь интернет.');
+    });
+  }
+
+  function fail(text){ var f = $('fail'); f.textContent = text; f.classList.add('on'); }
+
+  function applyState(d, first){
+    MAX = d.hp_max || 1;
+    var slug = BOSSES[d.boss] ? d.boss : 'bobr';
+    B = BOSSES[slug]; SCENE = B.scene;
+    boss.setAttribute('data-boss', slug === 'bobr' ? 'bobrgus' : slug);
+    arena.setAttribute('data-scene', B.scene);
+    $('bossName').textContent = B.name;
+    $('bossSub').textContent = (d.subject ? d.subject + ' · ' : '') + 'тема «' + d.topic + '»';
+    $('classLine').textContent = 'Сегодня били: ' + d.contributed_today + ' из ' + d.class_size;
+    if (first || d.hp_left <= S.hp){
+      var drop = first ? 0 : S.hp - d.hp_left;
+      S.hp = d.hp_left;
+      if (drop > 0){ feedLine('<b>Класс</b> · −' + drop); }
+    }
+    paintHP(); paintStage();
+    if (first){
+      S.myHits = (d.me && d.me.hits_today) || 0;
+      hitsEl.textContent = S.myHits;
+      say(B.who, B.lines[stageIdx(S.hp)]);
+    }
+    if (d.status === 'won' || S.hp <= 0){
+      quiz.hidden = true; win.hidden = false; winHits.textContent = S.myHits;
+      boss.classList.add('down');
+    }
+  }
+
+  /* ===== частицы ===== */
+  function setupCanvas(c){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = c.getBoundingClientRect();
+    c.width = Math.max(1, r.width * dpr); c.height = Math.max(1, r.height * dpr);
+    var ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx:ctx, w:r.width, h:r.height };
+  }
+  var ffC = $('fireflies'), spC = $('sparks'), FF, SP;
+  var flies = [], sparks = [], glints = [];
+  function initFx(){
+    FF = setupCanvas(ffC); SP = setupCanvas(spC);
+    flies = []; glints = [];
+    for (var g = 0; g < 26; g++) glints.push({ x:FF.w*0.64 + Math.random()*FF.w*0.34, y:FF.h*0.72 + Math.random()*FF.h*0.12, p:Math.random()*6.28, s:.6+Math.random()*1.4 });
+    for (var i = 0; i < 16; i++) flies.push({ x:Math.random()*FF.w, y:40+Math.random()*(FF.h-110), a:Math.random()*6.28, s:.15+Math.random()*.35, p:Math.random()*6.28 });
+  }
+  function spawnSparks(){
+    if (reduce || !SP) return;
+    var cx = SP.w/2, cy = SP.h*0.48;
+    for (var i = 0; i < 18; i++){
+      var ang = Math.random()*Math.PI*2, sp = 2 + Math.random()*4;
+      sparks.push({ x:cx + (Math.random()-.5)*40, y:cy + (Math.random()-.5)*60, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp - 1.5, life:1, c: Math.random() < .6 ? '#FFE08A' : '#F6A15A', r:1.5+Math.random()*2.2, conf:false });
+    }
+  }
+  function confetti(){
+    if (reduce || !SP) return;
+    var cols = ['#F0C35A','#D9573A','#8DBE5C','#F6E7C8','#7FB3D5'];
+    for (var i = 0; i < 90; i++){
+      sparks.push({ x:Math.random()*SP.w, y:-10 - Math.random()*80, vx:(Math.random()-.5)*1.6, vy:1.5+Math.random()*2.5, life:1.6, c:cols[i%cols.length], r:3+Math.random()*3, conf:true, rot:Math.random()*6.28 });
+    }
+  }
+  function tick(t){
+    if (FF){
+      var c = FF.ctx; c.clearRect(0, 0, FF.w, FF.h);
+      if (SCENE === 'lake'){
+        glints.forEach(function(g){
+          var a = Math.max(0, Math.sin(t/(500*g.s) + g.p));
+          if (a < .55) return;
+          c.fillStyle = 'rgba(255,244,220,' + ((a-.55)*2) + ')';
+          c.fillRect(g.x - 3, g.y, 6, 1.2); c.fillRect(g.x - .6, g.y - 2, 1.2, 5);
+        });
+      } else flies.forEach(function(f){
+        f.a += (Math.random()-.5)*.2; f.x += Math.cos(f.a)*f.s; f.y += Math.sin(f.a)*f.s*.6;
+        if (f.x < 0) f.x = FF.w; if (f.x > FF.w) f.x = 0; if (f.y < 30) f.y = 30; if (f.y > FF.h-60) f.y = FF.h-60;
+        var glow = .35 + .65*Math.abs(Math.sin(t/900 + f.p));
+        c.beginPath(); c.fillStyle = 'rgba(214,240,140,' + (0.18*glow) + ')'; c.arc(f.x, f.y, 6, 0, 6.28); c.fill();
+        c.beginPath(); c.fillStyle = 'rgba(236,250,180,' + (0.9*glow) + ')'; c.arc(f.x, f.y, 1.6, 0, 6.28); c.fill();
+      });
+    }
+    if (SP){
+      var s = SP.ctx; s.clearRect(0, 0, SP.w, SP.h);
+      sparks = sparks.filter(function(p){ return p.life > 0 && p.y < SP.h + 20; });
+      sparks.forEach(function(p){
+        p.x += p.vx; p.y += p.vy;
+        if (p.conf){ p.vx += (Math.random()-.5)*.1; p.rot += .1; p.life -= .004; }
+        else { p.vy += .15; p.vx *= .97; p.life -= .03; }
+        s.globalAlpha = Math.max(0, Math.min(1, p.life));
+        s.fillStyle = p.c;
+        if (p.conf){ s.save(); s.translate(p.x, p.y); s.rotate(p.rot); s.fillRect(-p.r, -p.r/2, p.r*2, p.r); s.restore(); }
+        else { s.beginPath(); s.arc(p.x, p.y, p.r, 0, 6.28); s.fill(); }
+      });
+      s.globalAlpha = 1;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', initFx);
+  initFx();
+  if (!reduce) requestAnimationFrame(tick);
+
+  $('again').addEventListener('click', function(){ location.href = '/raids?' + params().toString(); });
+  $('back').addEventListener('click', function(){ location.href = '/raids?' + params().toString(); });
+  $('logout').addEventListener('click', function(){
+    try { localStorage.removeItem('boss_token'); } catch (e) {}
+    location.href = '/join';
+  });
+
+  fetch(api('/api/state')).then(function(r){ return r.json(); }).then(function(d){
+    if (d.error) return fail(d.error);
+    applyState(d, true);
+    if (d.status !== 'won' && S.hp > 0) ask(d.question);
+  }).catch(function(){ fail('Не удалось загрузить рейд. Обнови экран.'); });
+
+  // подтягиваем чужие удары
+  setInterval(function(){
+    if (S.locked || S.hp <= 0) return;
+    fetch(api('/api/state')).then(function(r){ return r.json(); }).then(function(d){
+      if (!d || d.error) return;
+      if (d.hp_left < S.hp){ damage(S.hp - d.hp_left, 'класс'); }
+      $('classLine').textContent = 'Сегодня били: ' + d.contributed_today + ' из ' + d.class_size;
+    }).catch(function(){});
+  }, 12000);
+})();
+</script>

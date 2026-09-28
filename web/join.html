@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Вход в рейд</title>
+<style>
+  :root{--bg:#F1F0F7;--panel:#fff;--text:#221F38;--muted:#7A7694;--line:#E4E1F0;
+        --brand:#5B2C8D;--miss:#D94E2B}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);min-height:100vh;
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    padding:26px 22px;width:100%;max-width:380px}
+  h1{font-size:21px;margin:0 0 6px}
+  p.sub{margin:0 0 22px;color:var(--muted);font-size:14px}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+  input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);
+    background:var(--bg);color:var(--text);font-size:16px}
+  input:focus{outline:2px solid var(--brand);outline-offset:1px}
+  button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:12px;
+    background:var(--brand);color:#fff;font:600 16px/1 inherit;cursor:pointer}
+  button:disabled{opacity:.5}
+  .err{margin-top:14px;color:var(--miss);font-size:14px;display:none}
+  .err.on{display:block}
+  .note{margin-top:18px;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Босс темы</h1>
+  <p class="sub">Класс готовится к контрольной вместе.</p>
+
+  <label for="code">Код класса</label>
+  <input id="code" placeholder="7B-4KM" autocapitalize="characters" autocomplete="off">
+
+  <label for="name">Придумай логин в игре</label>
+  <input id="name" placeholder="coco_milk" autocomplete="off" autocapitalize="none">
+
+  <button id="go" type="button">Войти в рейд</button>
+  <div class="err" id="err"></div>
+
+  <p class="note">Логин виден одноклассникам, поэтому не пиши в нём фамилию. Мы сохраняем только логин и код класса. Ни фамилии, ни школы, ни телефона.</p>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  if (params.get('code')) $('code').value = params.get('code');
+  $((params.get('code') ? 'name' : 'code')).focus();
+
+  function fail(t){ $('err').textContent = t; $('err').classList.add('on'); }
+
+  function go(){
+    var code = $('code').value.trim();
+    var name = $('name').value.trim();
+    if (!code || !name) return fail('Заполни оба поля.');
+    $('go').disabled = true;
+    $('err').classList.remove('on');
+    fetch('/api/join', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({code: code, name: name})
+    }).then(function(r){ return r.json(); }).then(function(res){
+      $('go').disabled = false;
+      if (res.error) return fail(res.error);
+      try { localStorage.setItem('boss_token', res.token); } catch (e) {}
+      location.href = '/raids?t=' + encodeURIComponent(res.token);
+    }).catch(function(){
+      $('go').disabled = false;
+      fail('Нет связи с сервером. Попробуй ещё раз.');
+    });
+  }
+
+  $('go').addEventListener('click', go);
+  $('name').addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+})();
+</script>
+</body>
+</html>

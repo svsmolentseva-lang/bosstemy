@@ -1,0 +1,258 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Босс темы - кабинет администратора</title>
+<style>
+:root{
+  --bg:#15191F; --panel:#1E242B; --line:#323B44; --ink:#F2EADC; --soft:#A9B0A8;
+  --gold:#F0C35A; --red:#D9573A; --green:#8DBE5C;
+  --display:Georgia,"Times New Roman",serif; --body:"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);padding:24px 16px 60px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-family:var(--display);font-size:24px;margin:0 0 4px}
+.sub{color:var(--soft);font-size:13px;margin:0 0 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+h2{font-family:var(--display);font-size:17px;margin:0 0 12px}
+h3{font-size:14px;margin:0 0 6px}
+label{display:block;font-size:12px;color:var(--soft);margin:0 0 4px}
+input,select{font:inherit;font-size:14px;width:100%;padding:9px 11px;border-radius:10px;
+  border:1px solid var(--line);background:#232A32;color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:9px;align-items:end}
+.row2{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:end}
+button{font:inherit;font-weight:700;font-size:14px;padding:10px 16px;border-radius:10px;border:0;
+  background:var(--gold);color:#2B1F0C;cursor:pointer;white-space:nowrap}
+button.ghost{background:transparent;color:var(--soft);border:1px solid var(--line)}
+button:active{transform:translateY(1px)}
+.cls{border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px;background:#1A2027}
+.cls .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.cls .name{font-family:var(--display);font-weight:700;font-size:16px}
+.cls .meta{font-size:12px;color:var(--soft)}
+.link{display:flex;gap:8px;align-items:center;margin:6px 0}
+.link code{flex:1;font-size:12px;background:#232A32;border:1px solid var(--line);border-radius:8px;
+  padding:7px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link button{padding:7px 12px;font-size:12.5px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.tag{font-size:12px;background:#2A323A;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.tag b{font-weight:700}
+.tag button{background:none;border:0;color:var(--soft);cursor:pointer;padding:0 0 0 6px;font-size:13px}
+.raid{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.raid i{font-style:normal;color:var(--soft);font-variant-numeric:tabular-nums}
+.empty{color:var(--soft);font-size:13px}
+.msg{margin:10px 0 0;font-size:13px;min-height:18px}
+.msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+.gate{max-width:420px;margin:60px auto}
+.row3{display:grid;grid-template-columns:1.2fr 1.2fr 1fr auto;gap:9px;align-items:end}
+.done{margin-top:10px}
+@media (max-width:620px){
+  .row,.row3{grid-template-columns:1fr 1fr}
+  .row button,.row3 button{grid-column:1 / -1}
+}
+</style></head><body>
+<datalist id="subjects"></datalist>
+
+<div class="wrap" id="app" hidden>
+  <h1>Кабинет администратора</h1>
+  <p class="sub">Заводите классы и учителей, выдавайте ссылки. Один учитель может вести несколько классов и несколько предметов в одном классе.</p>
+
+  <div class="card">
+    <h2>Новый класс</h2>
+    <div class="row3">
+      <div><label for="ct">Название</label><input id="ct" placeholder="7 А"></div>
+      <div><label for="cn">Учитель, если сразу</label><input id="cn" placeholder="Олеся Владимировна"></div>
+      <div><label for="cs">Предмет</label><input id="cs" list="subjects" placeholder="Математика"></div>
+      <button id="cb">Создать</button>
+    </div>
+    <p class="msg" id="cm"></p>
+    <div class="done" id="cd"></div>
+  </div>
+
+  <div class="card">
+    <h2>Новый учитель</h2>
+    <div class="row2">
+      <div><label for="tn">Имя</label><input id="tn" placeholder="Олеся Владимировна"></div>
+      <button id="tb">Создать</button>
+    </div>
+    <p class="msg" id="tm"></p>
+    <div class="done" id="td"></div>
+  </div>
+
+  <div class="card">
+    <h2>Кто что ведёт</h2>
+    <div class="row">
+      <div><label for="at">Учитель</label><select id="at"></select></div>
+      <div><label for="ac">Класс</label><select id="ac"></select></div>
+      <div><label for="as">Предмет</label><input id="as" list="subjects" placeholder="Математика"></div>
+      <button id="ab">Привязать</button>
+    </div>
+    <p class="msg" id="am"></p>
+  </div>
+
+  <div class="card">
+    <h2>Классы</h2>
+    <div id="classes"></div>
+  </div>
+
+  <div class="card">
+    <h2>Учителя</h2>
+    <div id="teachers"></div>
+  </div>
+</div>
+
+<div class="wrap gate" id="gate">
+  <div class="card">
+    <h2>Нужен ключ администратора</h2>
+    <p class="sub">Сервер печатает его при первом запуске и хранит в файле <code>.admin-token</code> рядом с ботом.</p>
+    <div class="row2">
+      <div><label for="k">Ключ</label><input id="k" autocomplete="off"></div>
+      <button id="kb">Войти</button>
+    </div>
+    <p class="msg err" id="km"></p>
+  </div>
+</div>
+
+<script>
+var T = new URLSearchParams(location.search).get("t") || "";
+var el = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); };
+
+function say(node, text, ok){ node.textContent = text; node.className = "msg " + (ok ? "ok" : "err"); }
+
+function api(path, body){
+  var opt = body ? {method:"POST", body: JSON.stringify(body)} : {};
+  return fetch(path + (path.indexOf("?") < 0 ? "?" : "&") + "t=" + encodeURIComponent(T), opt)
+    .then(function(r){ return r.json().then(function(j){
+      if (!r.ok) throw new Error(j.error || "ошибка"); return j; }); });
+}
+
+function copy(text, btn){
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent; btn.textContent = "скопировано";
+    setTimeout(function(){ btn.textContent = old; }, 1200);
+  });
+}
+
+function linkRow(url){
+  return '<div class="link"><code>' + esc(url) + '</code>' +
+         '<button class="ghost" data-copy="' + esc(url) + '">копировать</button></div>';
+}
+
+// сначала предметы пилота, дальше - остальные школьные, чтобы не печатать руками
+var SCHOOL = ["Математика","Русский язык","Литература","Физика","Биология","Информатика",
+  "Алгебра","Геометрия","История","Обществознание","География","Химия",
+  "Английский язык","Немецкий язык","Французский язык","Окружающий мир",
+  "Вероятность и статистика","ИЗО","Музыка","Технология","Физкультура","ОБЖ"];
+
+function fillSubjects(used){
+  var all = SCHOOL.slice();
+  (used || []).forEach(function(s){ if (all.indexOf(s) < 0) all.push(s); });
+  el("subjects").innerHTML = all.map(function(s){
+    return '<option value="' + esc(s) + '">'; }).join("");
+}
+
+function render(d){
+  fillSubjects(d.subjects);
+  var cls = el("classes");
+  cls.innerHTML = d.classes.length ? "" : '<p class="empty">Классов пока нет.</p>';
+  d.classes.forEach(function(c){
+    var box = document.createElement("div");
+    box.className = "cls";
+    var tags = c.teachers.map(function(t){
+      return '<span class="tag"><b>' + esc(t.name) + '</b> · ' + esc(t.subject) +
+             '<button data-un="' + t.id + '|' + c.id + '|' + esc(t.subject) + '" title="убрать">×</button></span>';
+    }).join("");
+    var raids = c.raids.map(function(r){
+      return '<div class="raid"><span>' + esc(r.subject) + ' · ' + esc(r.topic) +
+             '</span><i>' + r.hp_left + ' / ' + r.hp_max + ' · до ' + esc(r.deadline) + '</i></div>';
+    }).join("");
+    box.innerHTML =
+      '<div class="top"><span class="name">' + esc(c.title) + '</span>' +
+      '<span class="meta">код ' + esc(c.code) + ' · учеников ' + c.students + '</span></div>' +
+      linkRow(c.join_url) +
+      (tags ? '<div class="tags">' + tags + '</div>' : '<p class="empty">Учителя не назначены.</p>') +
+      (raids ? '<div style="margin-top:10px">' + raids + '</div>'
+             : '<div class="raid"><span class="empty">Открытых рейдов нет</span></div>');
+    cls.appendChild(box);
+  });
+
+  var tch = el("teachers");
+  tch.innerHTML = d.teachers.length ? "" : '<p class="empty">Учителей пока нет.</p>';
+  d.teachers.forEach(function(t){
+    var where = t.classes.map(function(c){
+      return esc(c.title) + " (" + c.subjects.map(esc).join(", ") + ")";
+    }).join(" · ") || "пока никуда не назначен";
+    var box = document.createElement("div");
+    box.className = "cls";
+    box.innerHTML = '<div class="top"><span class="name">' + esc(t.name) + '</span>' +
+                    '<span class="meta">' + where + '</span></div>' + linkRow(t.panel_url);
+    tch.appendChild(box);
+  });
+
+  el("at").innerHTML = d.teachers.map(function(t){
+    return '<option value="' + t.id + '">' + esc(t.name) + '</option>'; }).join("");
+  el("ac").innerHTML = d.classes.map(function(c){
+    return '<option value="' + c.id + '">' + esc(c.title) + '</option>'; }).join("");
+}
+
+function reload(){ return api("/api/admin").then(render); }
+
+document.addEventListener("click", function(e){
+  var b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.copy) return copy(b.dataset.copy, b);
+  if (b.dataset.un){
+    var p = b.dataset.un.split("|");
+    api("/api/admin/assign", {teacher_id:+p[0], class_id:+p[1], subject:p[2], remove:true})
+      .then(reload);
+  }
+});
+
+el("cb").onclick = function(){
+  var v = el("ct").value.trim();
+  if (!v) return say(el("cm"), "Впишите название", false);
+  var body = {title:v};
+  var who = el("cn").value.trim(), subj = el("cs").value.trim();
+  if (who) body.teacher_name = who;
+  if (subj) body.subject = subj;
+  api("/api/admin/class", body).then(function(r){
+    el("ct").value = ""; el("cn").value = ""; el("cs").value = "";
+    say(el("cm"), "Класс создан. Ссылка для учеников" + (r.teacher ? " и личная ссылка учителя" : "") + ":", true);
+    el("cd").innerHTML = linkRow(r.join_url) + (r.teacher ? linkRow(r.teacher.panel_url) : "");
+    reload();
+  }).catch(function(err){ say(el("cm"), err.message, false); });
+};
+
+el("tb").onclick = function(){
+  var v = el("tn").value.trim();
+  if (!v) return say(el("tm"), "Впишите имя", false);
+  api("/api/admin/teacher", {name:v}).then(function(r){
+    el("tn").value = "";
+    say(el("tm"), "Учитель создан. Личная ссылка на панель:", true);
+    el("td").innerHTML = linkRow(r.panel_url);
+    reload();
+  }).catch(function(err){ say(el("tm"), err.message, false); });
+};
+
+el("ab").onclick = function(){
+  var s = el("as").value.trim();
+  if (!s) return say(el("am"), "Впишите предмет", false);
+  api("/api/admin/assign", {teacher_id:+el("at").value, class_id:+el("ac").value, subject:s})
+    .then(function(){ el("as").value = ""; say(el("am"), "Готово", true); reload(); })
+    .catch(function(err){ say(el("am"), err.message, false); });
+};
+
+el("kb").onclick = function(){
+  var v = el("k").value.trim();
+  if (!v) return;
+  location.search = "?t=" + encodeURIComponent(v);
+};
+el("k").addEventListener("keydown", function(e){ if (e.key === "Enter") el("kb").click(); });
+
+if (T){
+  reload().then(function(){ el("gate").hidden = true; el("app").hidden = false; })
+          .catch(function(err){ el("km").textContent = err.message; });
+}
+</script>
+</body></html>

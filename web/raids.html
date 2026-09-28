@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Босс темы</title>
+<style>
+  :root{
+    --bg:#15191F; --panel:#1E242B; --line:#323B44; --ink:#F2EADC; --soft:#A9B0A8;
+    --gold:#F0C35A; --red:#D9573A; --green:#8DBE5C;
+    --display:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:20px 16px calc(28px + env(safe-area-inset-bottom));
+    max-width:520px; margin-inline:auto;}
+  h1{font-family:var(--display); font-size:24px; margin:0 0 4px}
+  .who{color:var(--soft); font-size:13.5px; margin:0 0 4px}
+  .who b{color:var(--ink)}
+  .today{color:var(--soft); font-size:13px; margin:0 0 18px}
+  .today b{color:var(--gold)}
+
+  h2{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--soft);
+    margin:22px 2px 10px}
+
+  .raid{display:flex; gap:13px; width:100%; text-align:left; cursor:pointer;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:13px 14px; margin-bottom:11px; font:inherit; color:inherit}
+  .raid:active{transform:translateY(1px)}
+  .ava{flex:0 0 66px; width:66px; height:66px; border-radius:14px; overflow:hidden;
+    background:#141A1F; border:1px solid var(--line)}
+  .ava img{width:100%; height:100%; object-fit:cover; object-position:50% 20%; display:block}
+  .body{flex:1; min-width:0}
+  .subj{font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--gold); font-weight:700}
+  .topic{font-family:var(--display); font-size:17px; margin:3px 0 2px}
+  .boss{font-size:12.5px; color:var(--soft)}
+  .track{height:8px; border-radius:99px; background:#2A323A; overflow:hidden; margin:9px 0 6px}
+  .fill{height:100%; border-radius:99px; background:linear-gradient(90deg,#D9573A,#F0C35A)}
+  .meta{display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--soft);
+    white-space:nowrap}
+  .meta b{color:var(--ink); font-variant-numeric:tabular-nums}
+
+  .empty{background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:18px; color:var(--soft); font-size:14px}
+  .hint{font-size:12.5px; color:var(--soft); margin:14px 2px 0}
+  .foot{margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+  .foot button{background:none; border:0; color:var(--soft); font:13px/1 inherit; cursor:pointer;
+    padding:10px 12px; text-decoration:underline; text-underline-offset:3px}
+  .err{padding:14px; border-radius:14px; background:#3A2320; color:#F0B4A4; font-size:13.5px; display:none}
+  .err.on{display:block}
+</style>
+</head>
+<body>
+
+<h1>Босс темы</h1>
+<p class="who" id="who">загружаем…</p>
+<p class="today" id="today"></p>
+
+<div class="err" id="err"></div>
+<div id="list"></div>
+<p class="hint" id="hint" hidden>Рейды идут по разным предметам - выбирай того босса, к теме которого готовишься.</p>
+
+<div class="foot">
+  <button type="button" id="refresh">Обновить</button>
+  <button type="button" id="logout">Это не я - сменить логин</button>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var qs = new URLSearchParams(location.search);
+  var initData = (window.WebApp && window.WebApp.initData) || '';
+
+  var saved = null;
+  try { saved = localStorage.getItem('boss_token'); } catch (e) {}
+  if (qs.get('t')) {
+    saved = qs.get('t');
+    try { localStorage.setItem('boss_token', saved); } catch (e) {}
+  }
+
+  var MONTHS = ['января','февраля','марта','апреля','мая','июня',
+                'июля','августа','сентября','октября','ноября','декабря'];
+  function ruDate(iso){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    return m ? (+m[3]) + ' ' + MONTHS[+m[2] - 1] : (iso || '');
+  }
+
+  function params(){
+    var p = new URLSearchParams(location.search);
+    if (!p.get('t') && !initData && saved) p.set('t', saved);
+    if (initData) p.set('init_data', initData);
+    p.delete('raid');
+    return p;
+  }
+  function api(path){ var s = params().toString(); return path + (s ? '?' + s : ''); }
+  function arena(id){ var p = params(); p.set('raid', id); return '/?' + p.toString(); }
+
+  function fail(text){ $('err').textContent = text; $('err').classList.add('on'); }
+
+  function draw(d){
+    $('who').innerHTML = 'Ты - <b>' + d.me + '</b>' + (d.class ? ', ' + d.class : '');
+    $('today').innerHTML = d.hits_today
+      ? 'Сегодня ты нанёс <b>' + d.hits_today + '</b> ударов из ' + d.daily_cap
+      : 'Сегодня ты ещё не бил - дневной запас ' + d.daily_cap + ' ударов';
+
+    var box = $('list');
+    box.innerHTML = '';
+    if (!d.raids.length){
+      box.innerHTML = '<div class="empty">Открытых рейдов пока нет. '
+        + 'Учитель объявит тему - босс появится здесь, и класс пойдёт его бить.</div>';
+      return;
+    }
+    $('hint').hidden = d.raids.length < 2;
+
+    d.raids.forEach(function(r){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'raid';
+
+      var ava = document.createElement('div'); ava.className = 'ava';
+      var img = document.createElement('img');
+      img.src = '/boss/' + (r.boss || 'bobr') + '-hp5.webp';
+      img.alt = r.boss_name || 'Босс';
+      ava.appendChild(img);
+
+      var body = document.createElement('div'); body.className = 'body';
+
+      var subj = document.createElement('div');
+      subj.className = 'subj'; subj.textContent = r.subject || 'Рейд';
+
+      var topic = document.createElement('div');
+      topic.className = 'topic'; topic.textContent = r.topic;
+
+      var boss = document.createElement('div');
+      boss.className = 'boss';
+      boss.textContent = (r.boss_name || 'Босс') + ' · до ' + ruDate(r.deadline);
+
+      var tr = document.createElement('div'); tr.className = 'track';
+      var f = document.createElement('div'); f.className = 'fill';
+      f.style.width = (r.hp_max ? r.hp_left / r.hp_max * 100 : 0) + '%';
+      tr.appendChild(f);
+
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var left = document.createElement('span');
+      left.innerHTML = 'Здоровье <b>' + r.hp_left + '</b> / ' + r.hp_max;
+      var right = document.createElement('span');
+      right.innerHTML = 'Сегодня <b>' + r.contributed_today + '</b> из ' + r.class_size
+        + (r.mine_today ? ' · ты <b>' + r.mine_today + '</b>' : '');
+      meta.appendChild(left); meta.appendChild(right);
+
+      body.appendChild(subj); body.appendChild(topic); body.appendChild(boss);
+      body.appendChild(tr); body.appendChild(meta);
+      b.appendChild(ava); b.appendChild(body);
+      b.addEventListener('click', function(){ location.href = arena(r.id); });
+      box.appendChild(b);
+    });
+  }
+
+  $('refresh').addEventListener('click', function(){ location.reload(); });
+  $('logout').addEventListener('click', function(){
+    try { localStorage.removeItem('boss_token'); } catch (e) {}
+    location.href = '/join';
+  });
+
+  if (!qs.get('t') && !qs.get('u') && !initData && !saved){
+    location.href = '/join' + (location.search || '');
+  } else {
+    fetch(api('/api/raids')).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) return fail(d.error);
+      draw(d);
+    }).catch(function(){ fail('Не удалось загрузить рейды. Обнови экран.'); });
+  }
+})();
+</script>
+</body>
+</html>
