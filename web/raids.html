@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15191F">
 <title>Босс темы</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   :root{
     --bg:#15191F; --panel:#1E242B; --line:#323B44; --ink:#F2EADC; --soft:#A9B0A8;
     --gold:#F0C35A; --red:#D9573A; --green:#8DBE5C;
-    --display:Georgia,"Times New Roman",serif;
+    --display:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; --body:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0; background:var(--bg); color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    font:15px/1.5 var(--body);
     padding:20px 16px calc(28px + env(safe-area-inset-bottom));
     max-width:520px; margin-inline:auto;}
   h1{font-family:var(--display); font-size:24px; margin:0 0 4px}

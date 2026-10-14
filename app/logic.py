@@ -281,10 +281,10 @@ def copy_from_library(class_id: int, topic: str, subject: str | None = None) -> 
         if exists:
             continue
         db.run(
-            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject, skill)"
-            " VALUES (?, ?, ?, ?, ?, 'approved', ?, ?)",
+            "INSERT INTO questions (class_id, topic, text, answer, options, status, subject,"
+            " skill, explanation) VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, ?)",
             class_id, r["topic"], r["text"], r["answer"], r["options"],
-            norm_subject(subject or r["subject"]), r["skill"],
+            norm_subject(subject or r["subject"]), r["skill"], r["explanation"],
         )
         added += 1
     return added
@@ -344,6 +344,10 @@ class Hit:
     hp_left: int
     skip_reason: str | None = None   # почему урон не засчитан
     victory: bool = False
+    attempt: int = 1                 # какая это была попытка: первая или вторая
+    retry: bool = False              # дать ещё одну попытку, ответ пока не показываем
+    answer: str | None = None        # верный ответ - только когда раунд закончен
+    explanation: str | None = None   # пояснение - тогда же
 
 
 BOSSES = {
@@ -407,24 +411,35 @@ def clone_raid(raid_id: int, target_class_id: int, days: int) -> dict:
                      target_class_id, r["text"]):
             db.run(
                 "INSERT INTO questions (class_id, topic, text, answer, options, status,"
-                " subject, skill) VALUES (?, ?, ?, ?, ?, 'approved', ?, ?)",
+                " subject, skill, explanation) VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, ?)",
                 target_class_id, r["topic"], r["text"], r["answer"], r["options"],
-                r["subject"], r["skill"],
+                r["subject"], r["skill"], r["explanation"],
             )
     return create_raid(target_class_id, src["topic"], days, src["hp_max"],
                        subject=src["subject"], boss=src["boss"])
 
 
 def next_question(raid_id: int, user_id: int) -> dict | None:
-    """Вопрос, на который этот ученик ещё не отвечал верно."""
+    """Следующий вопрос этому ученику - случайный из тех, что он ещё не видел.
+
+    Один и тот же вопрос второй раз одному ребёнку не достаётся, даже если он
+    на нём ошибся: иначе рейд превращается в пересдачу одного вопроса. Разным
+    детям вопросы выпадают независимо - совпадения нормальны.
+
+    Библиотечный вопрос и его копия в банке класса - это один и тот же текст
+    с разными номерами, поэтому библиотечные с такими же текстами отсекаем.
+    """
     raid = db.q1("SELECT * FROM raids WHERE id = ?", raid_id)
     row = db.q1(
-        "SELECT * FROM questions WHERE topic = ? AND status = 'approved'"
-        " AND (class_id = ? OR class_id IS NULL)"
-        " AND id NOT IN ("
-        "   SELECT question_id FROM answers WHERE raid_id = ? AND user_id = ? AND is_correct = 1"
-        " ) ORDER BY RANDOM() LIMIT 1",
-        raid["topic"], raid["class_id"], raid_id, user_id,
+        "SELECT q.* FROM questions q"
+        " WHERE q.topic = ? AND q.status = 'approved'"
+        "   AND (q.class_id = ? OR (q.class_id IS NULL AND NOT EXISTS ("
+        "         SELECT 1 FROM questions c WHERE c.class_id = ?"
+        "          AND c.status = 'approved' AND c.text = q.text)))"
+        "   AND q.id NOT IN ("
+        "         SELECT question_id FROM answers WHERE raid_id = ? AND user_id = ?)"
+        " ORDER BY RANDOM() LIMIT 1",
+        raid["topic"], raid["class_id"], raid["class_id"], raid_id, user_id,
     )
     if not row:
         return None
@@ -456,18 +471,32 @@ def submit_answer(raid_id: int, user_id: int, question_id: int,
     damage = 0
     skip = None
 
+    # Попытки считаем на сервере: у ученика их две, и урон даёт только
+    # верный ответ с первой. Со второй - разбор без урона.
+    # Вопрос, на котором ошиблись, может выпасть снова в другой день - тогда
+    # это снова первая попытка, поэтому считаем пары: нечётный ответ - первая
+    # попытка, чётный - вторая.
+    seen = db.q1(
+        "SELECT COUNT(*) n FROM answers WHERE raid_id = ? AND user_id = ? AND question_id = ?",
+        raid_id, user_id, question_id,
+    )["n"]
+    attempt = seen % 2 + 1
+
     if not correct:
         skip = "wrong"
-    elif raid["status"] != "active":
-        skip = "raid_closed"
-    elif elapsed_sec < config.MIN_ANSWER_SECONDS:
-        # ответ быстрее, чем можно прочитать вопрос - это тык наугад
-        skip = "too_fast"
     elif db.q1(
         "SELECT 1 FROM answers WHERE raid_id = ? AND user_id = ? AND question_id = ? AND is_correct = 1",
         raid_id, user_id, question_id,
     ):
         skip = "repeat"
+    elif attempt > 1:
+        # верно со второй попытки - разбор есть, урона нет
+        skip = "second_try"
+    elif raid["status"] != "active":
+        skip = "raid_closed"
+    elif elapsed_sec < config.MIN_ANSWER_SECONDS:
+        # ответ быстрее, чем можно прочитать вопрос - это тык наугад
+        skip = "too_fast"
     elif hits_today(user_id) >= config.DAILY_HIT_CAP:
         # чтобы один человек не выносил босса за класс
         skip = "daily_cap"
@@ -488,8 +517,13 @@ def submit_answer(raid_id: int, user_id: int, question_id: int,
             db.run("UPDATE raids SET status = 'won', hp_left = 0 WHERE id = ?", raid_id)
             hp_left, victory = 0, True
 
+    # после первой ошибки показываем «попробуй ещё раз» и прячем разбор
+    retry = (not correct) and attempt == 1
     return Hit(correct=correct, damage=damage, hp_left=hp_left,
-               skip_reason=skip if skip != "wrong" else None, victory=victory)
+               skip_reason=skip if skip != "wrong" else None, victory=victory,
+               attempt=attempt, retry=retry,
+               answer=None if retry else question["answer"],
+               explanation=None if retry else (question["explanation"] or ""))
 
 
 # ─────────────────────────────── отчёты ───────────────────────────────

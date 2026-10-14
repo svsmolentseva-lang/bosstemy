@@ -180,7 +180,7 @@ def test_join_code_is_unique_and_readable(world):
 def test_library_questions_have_four_options(world):
     """В каждом вопросе ровно четыре варианта, один верный и указана подтема."""
     from app import seed
-    for topic, skill, text, answer, options in seed.LIBRARY:
+    for topic, skill, text, answer, options, explanation in seed.all_questions():
         assert len(options) == 4, f"{text}: вариантов {len(options)}, а нужно 4"
         assert len(set(options)) == 4, f"{text}: варианты повторяются"
         assert options.count(answer) == 1, f"{text}: верный ответ не один"
@@ -203,9 +203,122 @@ def test_library_options_are_not_equal_by_value(world):
         except Exception:
             return None
 
-    for topic, skill, text, answer, options in seed.LIBRARY:
+    for topic, skill, text, answer, options, explanation in seed.all_questions():
         right = value(answer)
         if right is None:
             continue
         twins = [o for o in options if o != answer and value(o) == right]
         assert not twins, f"{text}: {twins} равны верному ответу"
+
+
+def _ask(world, student):
+    """Вопрос этому ученику - с ним и будем играть обе попытки."""
+    return logic.next_question(world["raid"]["id"], student["id"])
+
+
+def test_first_try_right_deals_damage_and_explains(world):
+    student = world["students"][0]
+    q = _ask(world, student)
+    hit = logic.submit_answer(world["raid"]["id"], student["id"], q["id"], q["answer"], 10.0)
+    assert hit.correct and hit.attempt == 1 and not hit.retry
+    assert hit.damage == config.DAMAGE_PER_HIT
+    assert hit.explanation, "после верного ответа показываем пояснение"
+
+
+def test_first_miss_gives_second_try_and_hides_answer(world):
+    student = world["students"][0]
+    q = _ask(world, student)
+    hit = logic.submit_answer(world["raid"]["id"], student["id"], q["id"], "мимо", 10.0)
+    assert not hit.correct and hit.retry and hit.attempt == 1
+    assert hit.damage == 0
+    assert hit.answer is None, "верный ответ со второй попытки ещё не показываем"
+    assert hit.explanation is None
+
+
+def test_second_try_right_gives_explanation_but_no_damage(world):
+    student = world["students"][0]
+    raid_id = world["raid"]["id"]
+    q = _ask(world, student)
+    logic.submit_answer(raid_id, student["id"], q["id"], "мимо", 10.0)
+    hit = logic.submit_answer(raid_id, student["id"], q["id"], q["answer"], 10.0)
+    assert hit.correct and hit.attempt == 2 and not hit.retry
+    assert hit.damage == 0, "урон даёт только ответ с первой попытки"
+    assert hit.skip_reason == "second_try"
+    assert hit.explanation
+
+
+def test_second_miss_shows_right_answer_and_explanation(world):
+    student = world["students"][0]
+    raid_id = world["raid"]["id"]
+    q = _ask(world, student)
+    logic.submit_answer(raid_id, student["id"], q["id"], "мимо", 10.0)
+    hit = logic.submit_answer(raid_id, student["id"], q["id"], "снова мимо", 10.0)
+    assert not hit.correct and hit.attempt == 2 and not hit.retry
+    assert hit.damage == 0
+    assert hit.answer == q["answer"]
+    assert hit.explanation
+
+
+def test_every_library_question_has_explanation(world):
+    """Пояснение обязательно: без него разбор после ответа пустой."""
+    from app import seed
+    for topic, skill, text, answer, options, explanation in seed.all_questions():
+        assert explanation.strip(), f"{text}: нет пояснения"
+        assert len(options) == 4 and options.count(answer) == 1, f"{text}: варианты не в порядке"
+
+
+def test_question_never_repeats_for_one_student(world):
+    """Один ребёнок видит каждый вопрос ровно один раз, даже если ошибся."""
+    raid_id = world["raid"]["id"]
+    student = world["students"][0]
+    seen, texts = [], []
+    for i in range(500):
+        q = logic.next_question(raid_id, student["id"])
+        if q is None:
+            break
+        seen.append(q["id"])
+        texts.append(q["text"])
+        # через раз отвечаем неверно - на выдачу это влиять не должно
+        logic.submit_answer(raid_id, student["id"], q["id"],
+                            q["answer"] if i % 2 else "мимо", 10.0)
+    assert seen, "вопросы должны выдаваться"
+    assert len(seen) == len(set(seen)), "номер вопроса повторился"
+    assert len(texts) == len(set(texts)), "текст вопроса повторился"
+    bank = db.q1("SELECT COUNT(DISTINCT text) n FROM questions"
+                 " WHERE topic = 'Дроби' AND status = 'approved'")["n"]
+    assert len(seen) == bank, "ученик должен пройти весь банк темы"
+
+
+def test_same_question_can_go_to_different_students(world):
+    """Разным детям один и тот же вопрос выпадать может."""
+    raid_id = world["raid"]["id"]
+    a, b = world["students"][0], world["students"][1]
+    q = logic.next_question(raid_id, a["id"])
+    logic.submit_answer(raid_id, a["id"], q["id"], q["answer"], 10.0)
+    seen_b = set()
+    for _ in range(40):
+        nxt = logic.next_question(raid_id, b["id"])
+        if nxt is None:
+            break
+        seen_b.add(nxt["id"])
+        logic.submit_answer(raid_id, b["id"], nxt["id"], nxt["answer"], 10.0)
+    assert q["id"] in seen_b
+
+
+def test_options_come_in_random_order(world):
+    """Варианты перемешиваются: верный не стоит всё время на одном месте."""
+    raid_id = world["raid"]["id"]
+    places = set()
+    for student in world["students"]:
+        q = logic.next_question(raid_id, student["id"])
+        places.add(q["options"].index(q["answer"]))
+        if len(places) > 1:
+            break
+    else:
+        # пять учеников - маловато; добьём перевыдачей тому же ребёнку
+        first = world["students"][0]
+        q = logic.next_question(raid_id, first["id"])
+        for _ in range(20):
+            again = logic.next_question(raid_id, first["id"])
+            places.add(again["options"].index(again["answer"]))
+    assert len(places) > 1, "верный ответ всё время на одном месте"

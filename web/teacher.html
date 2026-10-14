@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F3F1F7">
 <title>Панель класса</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   :root{
     --bg:#F1F0F7; --panel:#FFFFFF; --text:#221F38; --muted:#7A7694;
     --line:#E4E1F0; --brand:#5B2C8D; --green:#1F9E60; --miss:#D94E2B;
+    --display:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; --body:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     --arena:#241C42;
   }
   *{box-sizing:border-box}
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    font:15px/1.5 var(--body);
     padding:18px 16px calc(24px + env(safe-area-inset-bottom));
     max-width:640px; margin-inline:auto;
   }
-  h1{font-size:20px; margin:0 0 2px}
+  h1{font-family:var(--display); font-size:20px; margin:0 0 2px}
   .who{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
     color:var(--muted); font-size:13px; margin-bottom:18px}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:18px;

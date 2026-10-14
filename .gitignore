@@ -18,3 +18,4 @@ _backup/
 .fuse_hidden*
 _to_delete/
 .server-host
+_teacher_sample.json

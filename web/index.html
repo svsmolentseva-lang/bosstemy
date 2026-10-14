@@ -4,16 +4,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15191F">
 <title>Арена «Босс темы»</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700;800&family=PT+Sans:wght@400;700&display=swap">
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   :root{
     --ground:#EDE4D6; --paper:#FBF6EE; --ink:#2B211A; --ink-soft:#6E6156; --line:#D9CCB8;
     --rust:#B24328; --moss:#5C6B3C;
     --shadow:0 1px 2px rgba(43,33,26,.10), 0 8px 24px rgba(43,33,26,.08);
-    --display:"Bitter",Georgia,"Times New Roman",serif;
-    --body:"PT Sans","Segoe UI",Arial,sans-serif;
+    --display:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    --body:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     /* игровой экран — всегда ночной лес */
     --g-bg:#15191F; --g-panel:#1E242B; --g-line:#323B44; --g-ink:#F2EADC; --g-soft:#A9B0A8;
     --g-gold:#F0C35A; --g-red:#D9573A; --g-green:#8DBE5C; --g-chip:#F6E7C8;
@@ -38,12 +36,12 @@
 
   /* ===== телефон ===== */
   .phone{width:390px;max-width:100%;flex:0 0 auto;background:var(--g-bg);color:var(--g-ink);border-radius:28px;overflow:hidden;box-shadow:0 18px 40px rgba(20,16,12,.35);border:1px solid #0B0D10;}
-  .top{padding:12px 14px 10px;display:grid;gap:7px;background:linear-gradient(180deg,#1B2129,#161B21);}
+  .top{padding:6px 17px;display:grid;gap:4px;background:linear-gradient(180deg,#1B2129,#161B21);}
   .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .boss-name{font-family:var(--display);font-weight:800;font-size:17px;margin:0;letter-spacing:.01em;}
-  .boss-name small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--g-soft);margin-left:6px;}
-  .hpnum{font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;}
-  .hpnum span{color:var(--g-soft);font-weight:400;}
+  .boss-name small{font-family:var(--body);font-weight:500;font-size:13px;color:#D6DDD2;margin-left:6px;}
+  .hpnum{font-variant-numeric:tabular-nums;font-weight:800;font-size:16px;white-space:nowrap;}
+  .hpnum span{color:#C3CBC0;font-weight:500;}
   .hpbar{position:relative;height:16px;border-radius:9px;background:#0C0F12;border:1px solid var(--g-line);overflow:hidden;}
   .hp-chip,.hp-fill{position:absolute;inset:0 auto 0 0;width:100%;}
   .hp-chip{background:var(--g-chip);transition:width .6s ease .45s;}
@@ -53,7 +51,7 @@
   .hp-seg i:last-child{border-right:0;}
   .hpbar.pulse{animation:barpulse .5s ease;}
   @keyframes barpulse{40%{box-shadow:0 0 0 3px rgba(240,195,90,.35)}}
-  .status{display:flex;justify-content:space-between;font-size:12px;color:var(--g-soft);}
+  .status{display:flex;justify-content:space-between;font-size:12.5px;color:#C3CBC0;}
   .streak{color:var(--g-gold);font-weight:700;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;}
   .streak.on{opacity:1;transform:scale(1);}
 
@@ -141,26 +139,59 @@
   @keyframes banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1)}}
 
   /* реплика */
-  .bark{position:relative;margin:0;padding:10px 14px;background:var(--g-panel);border-top:1px solid var(--g-line);border-bottom:1px solid var(--g-line);font-size:14px;min-height:42px;}
+  .bark{position:relative;margin:0;padding:6px 17px;background:var(--g-panel);border-top:1px solid var(--g-line);border-bottom:1px solid var(--g-line);font-size:14px;min-height:34px;}
   .bark::before{content:"";position:absolute;left:50%;top:-8px;width:14px;height:14px;background:var(--g-panel);border-left:1px solid var(--g-line);border-top:1px solid var(--g-line);transform:translateX(-50%) rotate(45deg);}
   .bark b{font-family:var(--display);color:var(--g-gold);}
   .bark.pop{animation:pop .3s ease;}
   @keyframes pop{0%{transform:scale(.97)}60%{transform:scale(1.01)}100%{transform:none}}
 
   /* вопрос */
-  .quiz{padding:12px 14px 14px;display:grid;gap:10px;}
-  .q{font-family:var(--display);font-weight:700;font-size:17px;margin:0;text-wrap:balance;}
-  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .opt{font:inherit;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;padding:12px 10px;border-radius:14px;border:1px solid var(--g-line);background:#232A32;color:var(--g-ink);cursor:pointer;box-shadow:0 3px 0 #0C0F12;transition:transform .08s, box-shadow .08s, background .15s, border-color .15s;}
+  .quiz{padding:6px 8px;display:grid;gap:4px;}
+  .q{font-family:var(--display);font-weight:700;font-size:17px;margin:0;text-wrap:balance;
+    padding-inline:9px;}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+  .opt{font:inherit;font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;padding:6px 8px;min-height:44px;border-radius:14px;border:1px solid var(--g-line);background:#232A32;color:var(--g-ink);cursor:pointer;box-shadow:0 3px 0 #0C0F12;transition:transform .08s, box-shadow .08s, background .15s, border-color .15s;}
   .opt:hover{border-color:#56626C;}
   .opt:active{transform:translateY(3px);box-shadow:0 0 0 #0C0F12;}
   .opt:focus-visible{outline:2px solid var(--g-gold);outline-offset:2px;}
   .opt.right{background:#2F4A26;border-color:var(--g-green);animation:okpulse .5s ease;}
   .opt.wrong{background:#4A2420;border-color:var(--g-red);animation:nope .35s ease;}
   .opt[disabled]{cursor:default;}
+  .opt.dim{opacity:.45;}
+  /* длинные варианты не влезают в два столбца - такие ставим в один,
+     мельче и по левому краю: это уже предложения, а не «5/6» */
+  .opts.tall{grid-template-columns:1fr;gap:4px;}
+  .opts.tall .opt{font-size:15px;font-weight:600;padding:6px 8px;text-align:left;
+    line-height:1.3;text-wrap:pretty;}
+  /* с длинными вопросами картинке достаётся меньше места */
+  .phone.tallq .arena{min-height:150px;}
+
+  /* разбор: что верно и почему */
+  .verdict{display:grid;gap:4px;padding:6px 8px;border-radius:14px;
+    background:#1B222A;border:1px solid var(--g-line);}
+  .verdict[hidden]{display:none;}
+  .verdict.ok{background:#22301F;border-color:var(--g-green);}
+  .verdict.miss{background:#2E2220;border-color:var(--g-red);}
+  .vhead{margin:0;font-family:var(--display);font-weight:700;font-size:16px;}
+  .vhead[hidden]{display:none;}
+  .verdict.ok .vhead{color:#A8D58A;}
+  .verdict.miss .vhead{color:#F0B4A4;}
+  .verdict.retry .vhead{color:var(--g-gold);}
+  .vright{margin:0;font-size:14.5px;}
+  .vright b{color:#A8D58A;}
+  .vwhy{margin:0;font-size:14px;line-height:1.45;color:var(--g-soft);}
+  .vwhy[hidden]{display:none;}
+  .next{justify-self:stretch;margin-top:0;font:inherit;font-weight:700;font-size:16px;
+    padding:6px 8px;border-radius:12px;border:0;background:#E8841F;color:#21160A;
+    cursor:pointer;box-shadow:0 3px 0 #0C0F12;}
+  .next:active{transform:translateY(3px);box-shadow:0 0 0 #0C0F12;}
+  .next:focus-visible{outline:2px solid var(--g-gold);outline-offset:2px;}
   @keyframes okpulse{50%{transform:scale(1.04)}}
   @keyframes nope{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
-  .foot{display:flex;justify-content:space-between;font-size:12px;color:var(--g-soft);}
+  .foot{display:flex;justify-content:space-between;font-size:12px;color:var(--g-soft);
+    padding-inline:9px;}
+  /* пока открыт разбор, счётчики уступают место тексту - они вернутся */
+  .phone.showing .foot{display:none;}
 
   /* вопросы от ученика */
   .myq{padding:12px 14px 14px;display:grid;gap:9px;border-top:1px solid var(--g-line);}
@@ -229,10 +260,11 @@
       flex:1 1 auto;display:flex;flex-direction:column;
       padding-top:env(safe-area-inset-top)}
     .arena{flex:1 1 auto;min-height:280px}
+    .phone.tallq .arena{flex:0 1 28dvh;min-height:140px}
     /* босс подстраивается под высоту арены, а не обрезается сверху */
     .boss{width:min(340px,94%);height:76%;bottom:9%}
-    .quiz{padding-bottom:16px}
-    .toplinks{margin:8px 14px calc(10px + env(safe-area-inset-bottom))}
+    .quiz{padding-bottom:6px}
+    .toplinks{margin:6px 17px calc(6px + env(safe-area-inset-bottom))}
     .failbox{margin:10px 12px 0}
   }
 
@@ -351,6 +383,12 @@
       <div class="quiz" id="quiz">
         <p class="q" id="qText"></p>
         <div class="opts" id="opts"></div>
+        <div class="verdict" id="verdict" hidden>
+          <p class="vhead" id="vhead"></p>
+          <p class="vright" id="vright" hidden></p>
+          <p class="vwhy" id="vwhy"></p>
+          <button class="next" id="next" type="button">Дальше</button>
+        </div>
         <div class="foot"><span id="classLine">Сегодня били: 0 из 0</span><span>Твои удары: <b id="hits">0</b></span></div>
       </div>
 
@@ -425,9 +463,10 @@
   var hpFill = $('hpFill'), hpChip = $('hpChip'), hpNow = $('hpNow'), hpbar = $('hpbar');
   var stageName = $('stageName'), streakEl = $('streak'), feed = $('feed'), banner = $('banner');
   var qText = $('qText'), opts = $('opts'), hitsEl = $('hits'), quiz = $('quiz');
-  var win = $('win'), winHits = $('winHits');
+  var win = $('win'), winHits = $('winHits'), verdict = $('verdict');
 
-  var S = { hp:0, myHits:0, streak:0, locked:false, qid:null, tauntTimer:null, nextTimer:null };
+  var S = { hp:0, myHits:0, streak:0, locked:false, qid:null, tries:0,
+            victory:false, tauntTimer:null, nextTimer:null };
 
   function pct(){ return MAX ? S.hp / MAX * 100 : 0; }
   function stageIdx(hp){
@@ -525,14 +564,47 @@
       opts.innerHTML = ''; S.qid = null; return;
     }
     S.qid = q.id;
+    S.tries = 0;
     qText.textContent = q.text;
+    hideVerdict();
     opts.innerHTML = '';
+    var longest = 0;
+    q.options.forEach(function(txt){ longest = Math.max(longest, txt.length); });
+    opts.classList.toggle('tall', longest > 18);
+    document.querySelector('.phone').classList.toggle('tallq', longest > 18 || q.text.length > 60);
     q.options.forEach(function(txt){
       var b = document.createElement('button');
       b.className = 'opt'; b.type = 'button'; b.textContent = txt;
       b.addEventListener('click', function(){ answer(b, txt); });
       opts.appendChild(b);
     });
+  }
+
+  function hideVerdict(){
+    document.querySelector('.phone').classList.remove('showing');
+    verdict.hidden = true;
+    verdict.className = 'verdict';
+    $('vright').hidden = true;
+    $('vwhy').textContent = '';
+  }
+
+  function showVerdict(kind, head, right, why){
+    document.querySelector('.phone').classList.add('showing');
+    verdict.className = 'verdict ' + kind;
+    verdict.hidden = false;
+    var h = $('vhead');
+    h.textContent = head || '';
+    h.hidden = !head;
+    var r = $('vright');
+    if (right){ r.innerHTML = 'Верный ответ: <b>' + right + '</b>'; r.hidden = false; }
+    else { r.hidden = true; }
+    var w = $('vwhy');
+    w.textContent = why || '';
+    w.hidden = !why;
+    $('next').hidden = (kind === 'retry');
+    // разбор должен быть виден, даже если вопрос длинный
+    try { verdict.scrollIntoView({block: 'nearest', behavior: 'smooth'}); } catch (e) {}
+    if (kind !== 'retry') $('next').focus({preventScroll: true});
   }
 
   function answer(btn, given){
@@ -544,35 +616,77 @@
       body: JSON.stringify({question_id: S.qid, given: given})
     }).then(function(r){ return r.json(); }).then(function(res){
       if (res.error){ S.locked = false; return fail(res.error); }
+
+      // первая ошибка: вторая попытка, верный ответ и разбор пока прячем
+      if (res.retry){
+        btn.classList.add('wrong');
+        S.streak = 0; streakEl.classList.remove('on');
+        taunt();
+        showVerdict('retry', 'Попробуй ещё раз', '', '');
+        Array.prototype.forEach.call(opts.children, function(b){
+          if (b === btn){ b.classList.add('dim'); return; }
+          b.disabled = false;
+        });
+        S.locked = false;
+        return;
+      }
+
       if (res.correct){
         btn.classList.add('right');
-        S.streak += 1; S.myHits += 1;
-        hitsEl.textContent = S.myHits;
-        streakEl.textContent = 'Серия ×' + S.streak;
-        streakEl.classList.toggle('on', S.streak >= 2);
         if (res.damage > 0){
+          S.streak += 1; S.myHits += 1;
+          hitsEl.textContent = S.myHits;
+          streakEl.textContent = 'Серия ×' + S.streak;
+          streakEl.classList.toggle('on', S.streak >= 2);
           damage(res.damage, 'ты');
           feedLine('<b>Ты</b> · −' + res.damage);
+          showVerdict('ok', 'Верно!', '', res.explanation);
+        } else if (res.skip_reason === 'daily_cap'){
+          showVerdict('ok', 'Верно!', '',
+            (res.explanation ? res.explanation + ' ' : '')
+            + 'Удары на сегодня кончились - завтра снова в бой.');
         } else {
-          say('Класс', res.skip_reason === 'daily_cap'
-            ? 'На сегодня твой лимит ударов исчерпан - приходи завтра.'
-            : 'Этот вопрос уже был засчитан.');
+          // верно со второй попытки: разбор есть, урона нет
+          showVerdict('ok', 'Верно!', '', res.explanation);
         }
       } else {
         btn.classList.add('wrong');
         S.streak = 0; streakEl.classList.remove('on');
         taunt();
+        // верный вариант сам загорается зелёным - подписывать его словами незачем
+        Array.prototype.forEach.call(opts.children, function(b){
+          if (b.textContent === res.answer) b.classList.add('right');
+        });
+        showVerdict('miss', '', '', res.explanation);
       }
+
       if (typeof res.hp_left === 'number' && res.hp_left < S.hp){
         damage(S.hp - res.hp_left, 'класс');
       }
-      clearTimeout(S.nextTimer);
-      S.nextTimer = setTimeout(function(){
-        S.locked = false;
-        if (!res.victory && S.hp > 0) ask(res.question);
-      }, 1200);
+      S.victory = !!res.victory;
+      S.locked = false;
     }).catch(function(){
       S.locked = false;
+      fail('Нет связи с сервером. Проверь интернет.');
+    });
+  }
+
+  // следующий вопрос только по кнопке - чтобы разбор успели прочитать
+  function nextQuestion(){
+    if (S.victory || S.hp <= 0){ hideVerdict(); return; }
+    $('next').disabled = true;
+    fetch(api('/api/next')).then(function(r){ return r.json(); }).then(function(res){
+      $('next').disabled = false;
+      if (res.error) return fail(res.error);
+      if (typeof res.hp_left === 'number' && res.hp_left < S.hp){
+        damage(S.hp - res.hp_left, 'класс');
+      }
+      if (res.contributed_today != null){
+        $('classLine').textContent = 'Сегодня били: ' + res.contributed_today + ' из ' + res.class_size;
+      }
+      ask(res.question);
+    }).catch(function(){
+      $('next').disabled = false;
       fail('Нет связи с сервером. Проверь интернет.');
     });
   }
@@ -586,7 +700,7 @@
     boss.setAttribute('data-boss', slug === 'bobr' ? 'bobrgus' : slug);
     arena.setAttribute('data-scene', B.scene);
     $('bossName').textContent = B.name;
-    $('bossSub').textContent = (d.subject ? d.subject + ' · ' : '') + 'тема «' + d.topic + '»';
+    $('bossSub').textContent = (d.subject ? d.subject + ' · ' : '') + d.topic;
     $('classLine').textContent = 'Сегодня били: ' + d.contributed_today + ' из ' + d.class_size;
     if (first || d.hp_left <= S.hp){
       var drop = first ? 0 : S.hp - d.hp_left;
@@ -677,6 +791,7 @@
   initFx();
   if (!reduce) requestAnimationFrame(tick);
 
+  $('next').addEventListener('click', nextQuestion);
   $('again').addEventListener('click', function(){ location.href = '/raids?' + params().toString(); });
   $('back').addEventListener('click', function(){ location.href = '/raids?' + params().toString(); });
   $('logout').addEventListener('click', function(){

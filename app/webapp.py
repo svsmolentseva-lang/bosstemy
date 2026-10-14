@@ -67,10 +67,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.api_raids(parse_qs(url.query))
         if url.path == "/api/teacher":
             return self.api_teacher(parse_qs(url.query))
+        if url.path == "/api/next":
+            return self.api_next(parse_qs(url.query))
         if url.path == "/api/state":
             return self.api_state(parse_qs(url.query))
         if url.path.startswith("/boss/"):
             return self.static("boss/" + os.path.basename(url.path))
+        if url.path.startswith("/fonts/"):
+            return self.static("fonts/" + os.path.basename(url.path))
         if url.path.startswith("/static/"):
             return self.static(os.path.basename(url.path))
         self.fail(404, "не найдено")
@@ -507,9 +511,26 @@ class Handler(BaseHTTPRequestHandler):
             "hp_left": hit.hp_left,
             "skip_reason": hit.skip_reason,
             "victory": hit.victory,
+            "attempt": hit.attempt,
+            "retry": hit.retry,
+            "answer": hit.answer,
+            "explanation": hit.explanation,
             "contributed_today": progress["contributed_today"],
             "class_size": progress["class_size"],
-            "question": self.take_question(raid, user) if not hit.victory else None,
+        })
+
+    def api_next(self, query):
+        """Следующий вопрос - по кнопке «Дальше», когда разбор прочитан."""
+        try:
+            user, raid = self.context(query)
+        except PermissionError as e:
+            return self.fail(403, str(e))
+        progress = logic.class_progress(raid["id"])
+        self.json({
+            "question": self.take_question(raid, user),
+            "hp_left": progress["hp_left"],
+            "contributed_today": progress["contributed_today"],
+            "class_size": progress["class_size"],
         })
 
     # ──────────────────────────── помощники ────────────────────────────
@@ -548,6 +569,8 @@ class Handler(BaseHTTPRequestHandler):
         if not os.path.isfile(path):
             return self.fail(404, "нет файла")
         ctype = mimetypes.guess_type(path)[0] or "application/octet-stream"
+        if name.startswith("fonts/"):
+            ctype = "font/woff2" if path.endswith(".woff2") else ctype
         with open(path, "rb") as f:
             body = f.read()
         self.send_response(200)
