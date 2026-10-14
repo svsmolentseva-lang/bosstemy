@@ -322,3 +322,26 @@ def test_options_come_in_random_order(world):
             again = logic.next_question(raid_id, first["id"])
             places.add(again["options"].index(again["answer"]))
     assert len(places) > 1, "верный ответ всё время на одном месте"
+
+
+def test_bank_counts_each_question_once(world):
+    """Библиотечный вопрос и его копия в классе - один вопрос, а не два."""
+    cls_id = world["class"]["id"]
+    logic.copy_from_library(cls_id, "Дроби")          # копии уже есть, зовём ещё раз
+    library = db.q1("SELECT COUNT(*) n FROM questions"
+                    " WHERE topic = 'Дроби' AND class_id IS NULL")["n"]
+    assert logic.bank_size(cls_id, "Дроби", include_library=True) == library
+
+
+def test_boss_hp_fits_a_real_class(world):
+    """Босса должно хватать на срок, но он обязан падать при разумной явке."""
+    cls_id = world["class"]["id"]
+    # в классе должны быть ученики со своими ссылками - от них считается здоровье
+    for i in range(10):
+        logic.join_by_link(world["class"]["join_code"], f"ученик{i}")
+    hp = logic.planned_hp(cls_id, days=3)
+    hits_needed = hp / config.DAMAGE_PER_HIT
+    size = len(logic.class_roster(cls_id))
+    per_child_per_day = hits_needed / size / 3
+    assert per_child_per_day <= config.DAILY_HIT_CAP, "босса не свалить в дневной лимит"
+    assert hp >= config.DEFAULT_RAID_HP

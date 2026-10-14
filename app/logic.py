@@ -116,13 +116,14 @@ def class_topics(class_id: int) -> list[str]:
 def planned_hp(class_id: int, days: int) -> int:
     """Здоровье босса под размер класса и срок рейда.
 
-    Потолок - если бы каждый каждый день выбирал дневной лимит. На деле так
-    не бывает, поэтому берём половину: босс падает, когда до конца дошла
-    примерно половина класса. Меньше стартового значения не опускаемся.
+    Раньше считали от потолка - будто каждый каждый день выбирает дневной
+    лимит в 12 ударов. Так не бывает: босс получался неподъёмным, полоска
+    почти не двигалась, и смысл пропадал. Теперь считаем от разумной явки:
+    примерно половина класса, по несколько ударов в день.
     """
     size = len(class_roster(class_id)) or 1
-    ceiling = size * days * config.DAILY_HIT_CAP * config.DAMAGE_PER_HIT
-    return max(config.DEFAULT_RAID_HP, ceiling // 2)
+    hits = size * config.EXPECTED_SHARE * days * config.EXPECTED_HITS_PER_DAY
+    return max(config.DEFAULT_RAID_HP, int(hits) * config.DAMAGE_PER_HIT)
 
 
 def known_subjects() -> list[str]:
@@ -261,9 +262,14 @@ def join_class(code: str, ext_id: str, name: str) -> dict | None:
 # ─────────────────────────── банк вопросов ────────────────────────────
 
 def bank_size(class_id: int, topic: str, include_library: bool = False) -> int:
+    """Сколько разных вопросов доступно классу по теме.
+
+    Считаем по текстам: библиотечный вопрос и его копия в банке класса - это
+    один и тот же вопрос, и ученику он выпадет один раз.
+    """
     if include_library:
         row = db.q1(
-            "SELECT COUNT(*) n FROM questions WHERE topic = ? AND status = 'approved'"
+            "SELECT COUNT(DISTINCT text) n FROM questions WHERE topic = ? AND status = 'approved'"
             " AND (class_id = ? OR class_id IS NULL)",
             topic, class_id,
         )
