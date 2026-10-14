@@ -192,6 +192,11 @@ class Handler(BaseHTTPRequestHandler):
                 "join_url": f"{base}/join?code={c['join_code']}",
                 "students": db.q1("SELECT COUNT(*) n FROM users WHERE class_id = ? AND role='student'",
                                   c["id"])["n"],
+                # поимённый список - логины, без фамилий; «играл» нужен, чтобы
+                # было видно, кто зашёл по ссылке, но так и не начал
+                "roster": [{"id": r["id"], "name": r["name"], "answers": r["answers"],
+                            "link": f"{base}/raids?t={r['token']}"}
+                           for r in logic.class_roster(c["id"])],
                 "teachers": teachers, "raids": raids,
             })
         teachers = []
