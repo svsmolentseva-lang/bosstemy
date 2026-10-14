@@ -97,6 +97,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.api_admin_class(parse_qs(url.query))
         if url.path == "/api/admin/teacher":
             return self.api_admin_teacher(parse_qs(url.query))
+        if url.path == "/api/admin/student":
+            return self.api_admin_student(parse_qs(url.query))
         if url.path == "/api/admin/assign":
             return self.api_admin_assign(parse_qs(url.query))
         if url.path == config.WEBHOOK_PATH:
@@ -209,6 +211,21 @@ class Handler(BaseHTTPRequestHandler):
             })
         self.json({"classes": classes, "teachers": teachers,
                    "subjects": logic.known_subjects()})
+
+    def api_admin_student(self, query):
+        """Уборка в классе: убрать ученика вместе с его ответами."""
+        try:
+            self.admin_ok(query)
+        except PermissionError as e:
+            return self.fail(403, str(e))
+        data = self.body_json()
+        try:
+            uid, cid = int(data.get("id")), int(data.get("class_id"))
+        except (TypeError, ValueError):
+            return self.fail(400, "нужны номера ученика и класса")
+        if not logic.delete_student(cid, uid):
+            return self.fail(400, "такого ученика в классе нет")
+        self.json({"ok": True})
 
     def api_admin_class(self, query):
         try:

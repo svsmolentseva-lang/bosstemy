@@ -219,6 +219,23 @@ def class_roster(class_id: int) -> list[dict]:
         "   AND u.token IS NOT NULL ORDER BY u.name", class_id)]
 
 
+def delete_student(class_id: int, user_id: int) -> bool:
+    """Убирает ученика вместе с его ответами - это для кабинета.
+
+    Нужно для уборки: дубли логинов и тестовые записи, заведённые до того,
+    как появился запрет на одинаковые логины. Учителю такого не даём: у него
+    кнопка убирает только тех, кто ещё ни разу не отвечал.
+    """
+    row = db.q1("SELECT * FROM users WHERE id = ? AND class_id = ? AND role = 'student'",
+                user_id, class_id)
+    if not row:
+        return False
+    db.run("DELETE FROM answers WHERE user_id = ?", user_id)
+    db.run("DELETE FROM questions WHERE author_id = ? AND status = 'pending'", user_id)
+    db.run("DELETE FROM users WHERE id = ?", user_id)
+    return True
+
+
 def remove_student(class_id: int, user_id: int) -> bool:
     """Убирает лишнюю запись - только из своего класса и только если не играл."""
     row = db.q1("SELECT * FROM users WHERE id = ? AND class_id = ? AND role = 'student'",

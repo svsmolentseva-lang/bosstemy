@@ -44,6 +44,7 @@ button:active{transform:translateY(1px)}
 .pupil.idle{color:var(--soft)}
 .pupil button{padding:2px 7px;font-size:11px;background:transparent;color:var(--soft);
   border:1px solid var(--line);border-radius:999px}
+.pupil button[data-drop]:hover{color:#E8674A;border-color:#E8674A}
 .sub{font-size:12px;color:var(--soft);margin:10px 0 0}
 .tag button{background:none;border:0;color:var(--soft);cursor:pointer;padding:0 0 0 6px;font-size:13px}
 .raid{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
@@ -149,7 +150,8 @@ function pupilsBlock(c){
   if (!list.length) return '<p class="sub">По ссылке ещё никто не зашёл.</p>';
   var tags = list.map(function(p){
     return '<span class="pupil' + (p.answers ? '' : ' idle') + '">' + esc(p.name) +
-           '<button data-link="' + esc(p.link) + '" title="личная ссылка ученика">ссылка</button></span>';
+           '<button data-link="' + esc(p.link) + '" title="личная ссылка ученика">ссылка</button>' +
+           '<button data-drop="' + p.id + '|' + c.id + '" title="убрать из класса">×</button></span>';
   }).join("");
   var played = list.filter(function(p){ return p.answers; }).length;
   return '<p class="sub">Ученики: ' + list.length + ', из них играли ' + played + '</p>' +
@@ -226,6 +228,16 @@ document.addEventListener("click", function(e){
   if (!b) return;
   if (b.dataset.copy) return copy(b.dataset.copy, b);
   if (b.dataset.link) return copy(b.dataset.link, b);   // личная ссылка ученика
+  if (b.dataset.drop){
+    // два щелчка: ответы ученика удаляются вместе с ним, назад не вернуть
+    if (b.textContent !== "точно?"){
+      b.textContent = "точно?";
+      setTimeout(function(){ if (b.textContent === "точно?") b.textContent = "×"; }, 4000);
+      return;
+    }
+    var d = b.dataset.drop.split("|");
+    return api("/api/admin/student", {id:+d[0], class_id:+d[1]}).then(reload);
+  }
   if (b.dataset.un){
     var p = b.dataset.un.split("|");
     api("/api/admin/assign", {teacher_id:+p[0], class_id:+p[1], subject:p[2], remove:true})
