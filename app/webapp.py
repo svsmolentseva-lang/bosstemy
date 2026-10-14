@@ -13,7 +13,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import auth, config, db, logic
+from . import auth, config, db, logic, seed
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
 
@@ -596,6 +596,17 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve(host: str = "0.0.0.0", port: int = 8080) -> None:
     db.connect()
+
+    # Банки вопросов подхватываются при старте: положили новый файл в bank,
+    # перезапустили сервис - вопросы в игре. Повторный запуск ничего не
+    # дублирует и заодно чинит старые записи (пояснения, подтемы, четыре
+    # варианта). Если файл банка битый, сервер всё равно поднимется.
+    try:
+        added = seed.load()
+        print(f"Банк вопросов: добавлено {added}")
+    except Exception as e:  # noqa: BLE001 - сервер важнее одного файла
+        print(f"Банк вопросов загрузить не удалось: {e}")
+
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"Мини-приложение слушает http://{host}:{port}")
     server.serve_forever()
